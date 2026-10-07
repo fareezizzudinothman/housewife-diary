@@ -44,6 +44,14 @@ export function errorHandler(err, _req, res, _next) {
     });
   }
 
+  if (err.type === 'entity.too.large') {
+    return sendError(res, {
+      code: ErrorCodes.VALIDATION_ERROR,
+      message: 'The request body is too large.',
+      status: 413,
+    });
+  }
+
   console.error(err);
   const isProduction = process.env.NODE_ENV === 'production';
   return sendError(res, {

@@ -93,4 +93,26 @@ export class ApiClient {
   del(path, options) {
     return this.request('DELETE', path, options);
   }
+
+  // Raw binary upload (POST with a Buffer body); used for diary attachments.
+  async upload(path, buffer, { filename = 'image', contentType = 'application/octet-stream' } = {}) {
+    await this.ensureCsrf();
+    const headers = {
+      Accept: 'application/json',
+      'Content-Type': contentType,
+      'X-Filename': encodeURIComponent(filename),
+      Cookie: this.cookieHeader(),
+    };
+    if (this.csrfToken) {
+      headers['X-CSRF-Token'] = this.csrfToken;
+    }
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers,
+      body: buffer,
+    });
+    this.storeCookies(response);
+    const parsed = await response.json().catch(() => null);
+    return { status: response.status, headers: response.headers, body: parsed };
+  }
 }

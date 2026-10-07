@@ -66,6 +66,13 @@ User ──< household_members >── Household
 
 Themes are pure CSS variable sets applied via `data-*` attributes on `<html>` plus per-user inline overrides (colors, radius, density, navigation style). Presets are rows in the `themes` table, preferences are stored per user in `user_preferences`, and a blocking boot script restores the cached theme before first paint. The full contract — variables, presets, API and runtime — is specified in [theme-system.md](theme-system.md).
 
+## Dashboard and diary (Phase 4)
+
+- **Dashboard** is a read-only aggregation: `GET /api/dashboard` composes the user, household and diary summary and marks every not-yet-built module `not_available` — the client never fakes data (the Phase 3 mock preview was deleted).
+- **Diary** is the first complete feature module and the template for later modules: `diaryValidators` → `diaryRepository` → `diaryService` → `diaryController` → `diary.routes`, mounted under `/api/diary`. Every query is scoped to `{householdId, userId}` so entries are private to their author inside a household.
+- **Attachments** are stored as files under `app/uploads/diary/` (Docker volume) with metadata rows in `diary_attachments`. Uploads arrive as raw binary bodies (no multipart dependency), are sniffed by magic bytes, and are only ever served back through authenticated streaming endpoints — never as static files. Full design: [diary.md](diary.md).
+- **Client pages** (`dashboard`, `diary`, `diary-entry`, `diary-form`) are plain HTML + page controllers under `js/pages/`, using the shared shell, components and `js/api` transport.
+
 ## AI assistant (Phase 10)
 
 The assistant never receives database access. It sits above a tool layer of allow-listed, household-scoped functions (`getTasks`, `createMeal`, `analyseExpenses`, …) that call the same application services used by the REST API, so authentication and household isolation apply automatically. See [ai-architecture.md](ai-architecture.md).
@@ -78,6 +85,7 @@ The assistant never receives database access. It sits above a tool layer of allo
 | PostgreSQL + Prisma with migrations | Mandated stack; migrations-only workflow, parameterized queries by default |
 | Same-origin static client served by the API | One service, no CORS complexity, simple Docker story |
 | Server-side sessions with HTTP-only cookies (Phase 2) | Secure logout/revocation, remember-me, CSRF control — see [authentication.md](authentication.md) |
+| Raw binary uploads with magic-byte sniffing (Phase 4) | Avoids a multipart dependency; type is decided by content, not the client; stored names are server-generated — see [diary.md](diary.md) |
 | Empty Prisma schema at foundation | Business tables land with their phase; no premature schema complexity |
 | Two environment files (root `.env` for Compose, `app/.env` for local dev) | Compose interpolates the root file; the app container receives `DATABASE_URL` built from it; local dev keeps an isolated file |
 | Non-root Docker container + healthchecks | Production posture from day one |

@@ -3,6 +3,8 @@
 // households, household_members, password_reset_tokens and
 // email_verification_tokens.
 // Phase 3 (theme engine) adds themes and user_preferences.
+// Phase 4 (dashboard + diary) adds moods, diary_entries, diary_tags,
+// diary_entry_tags and diary_attachments — see docs/diary.md.
 
 generator client {
   provider = "prisma-client-js"
@@ -57,6 +59,17 @@ enum NavStyle {
   @@map("nav_style")
 }
 
+// Phase 4 — dashboard and personal diary (see docs/diary.md).
+
+// Which part of the day an entry belongs to; drives the timeline sections.
+enum TimeOfDay {
+  MORNING
+  AFTERNOON
+  EVENING
+
+  @@map("time_of_day")
+}
+
 model User {
   id                String    @id @default(cuid())
   // citext-style uniqueness: emails are normalized to lowercase in the
@@ -78,6 +91,8 @@ model User {
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   preferences             UserPreference?
+  diaryEntries            DiaryEntry[]
+  diaryTags               DiaryTag[]
 
   @@map("users")
 }
@@ -111,6 +126,8 @@ model Household {
   owner         User              @relation("HouseholdOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
   members       HouseholdMember[]
   activeMembers User[]            @relation("UserActiveHousehold")
+  diaryEntries  DiaryEntry[]
+  diaryTags     DiaryTag[]
 
   @@index([ownerUserId])
   @@map("households")
@@ -204,4 +221,93 @@ model UserPreference {
   theme Theme? @relation(fields: [themeId], references: [id], onDelete: SetNull)
 
   @@map("user_preferences")
+}
+
+// Reusable mood catalog, seeded by migration (like themes). Entries point at
+// a mood with SET NULL so deleting a mood never deletes diary history.
+model Mood {
+  id        String @id
+  name      String
+  sortOrder Int    @default(0) @map("sort_order")
+
+  entries DiaryEntry[]
+
+  @@map("moods")
+}
+
+// Personal diary entries, private to their author and scoped to the
+// household they were written in (see docs/diary.md).
+model DiaryEntry {
+  id          String   @id @default(cuid())
+  householdId String   @map("household_id")
+  userId      String   @map("user_id")
+  title       String
+  // Plain text only — rendered with textContent, never innerHTML.
+  content     String
+  entryDate   DateTime @db.Date @map("entry_date")
+  timeOfDay   TimeOfDay @default(EVENING) @map("time_of_day")
+  moodId      String?  @map("mood_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household   Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mood        Mood?            @relation(fields: [moodId], references: [id], onDelete: SetNull)
+  tags        DiaryEntryTag[]
+  attachments DiaryAttachment[]
+
+  @@index([householdId, userId, entryDate(sort: Desc)])
+  @@map("diary_entries")
+}
+
+// Per-user tag vocabulary (private — never leaks across users).
+model DiaryTag {
+  id          String   @id @default(cuid())
+  householdId String   @map("household_id")
+  userId      String   @map("user_id")
+  name        String
+  // Lowercased name for case-insensitive uniqueness + filtering.
+  normalized  String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  household Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries   DiaryEntryTag[]
+
+  @@unique([householdId, userId, normalized])
+  @@index([userId])
+  @@map("diary_tags")
+}
+
+model DiaryEntryTag {
+  entryId String @map("entry_id")
+  tagId   String @map("tag_id")
+
+  entry DiaryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  tag   DiaryTag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, tagId])
+  @@map("diary_entry_tags")
+}
+
+// Attachment metadata is stored here; the physical file lives under
+// uploads/diary/ under a server-generated name (never the client's).
+model DiaryAttachment {
+  id      String @id @default(cuid())
+  entryId String @map("entry_id")
+  // Client filename, sanitized for display/download only — never a path.
+  originalName String @map("original_name")
+  // Server-generated: <random>.<ext> — the only name ever used on disk.
+  storedName   String   @unique @map("stored_name")
+  mimeType     String   @map("mime_type")
+  sizeBytes    Int      @map("size_bytes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  entry DiaryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([entryId])
+  @@map("diary_attachments")
 }

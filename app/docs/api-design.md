@@ -8,7 +8,7 @@ REST over HTTP, JSON only, mounted under `/api`. All endpoints follow the conven
 - **Auth:** every private route requires an authenticated session (HTTP-only cookie); authorization resolves the active household server-side. Unauthenticated → `401 UNAUTHORIZED`; wrong household/role → `403 FORBIDDEN`; cross-household resource ids → `404 NOT_FOUND` (no existence leaks).
 - **Validation:** request bodies/queries validated in `src/server/validators` before controllers act; failures return `400 VALIDATION_ERROR` with per-field `details`.
 - **Rate limiting:** applied to auth endpoints (login/register/reset/verification, per IP and per account), then to write endpoints generally.
-- **Pagination:** list endpoints (from Phase 4) accept `page`/`limit` and return `{ items, page, limit, total }` inside the standard success envelope.
+- **Pagination:** list endpoints (see `/api/diary`) accept `page`/`limit` and return `{ items, page, limit, total }` inside the standard success envelope.
 - **Time:** ISO-8601 strings in UTC; dates as `YYYY-MM-DD`.
 
 ## Response envelopes
@@ -39,6 +39,7 @@ Error:
 | Code | HTTP | Meaning |
 | --- | --- | --- |
 | `VALIDATION_ERROR` | 400 | Malformed/invalid input (incl. invalid JSON bodies) |
+| `VALIDATION_ERROR` | 413 | Request body exceeds the route's size limit (e.g. 5 MB uploads) |
 | `UNAUTHORIZED` | 401 | Missing/expired session or bad credentials |
 | `FORBIDDEN` | 403 | Authenticated but not allowed (role/household) |
 | `NOT_FOUND` | 404 | Resource does not exist (also used to avoid leaking existence) |
@@ -123,12 +124,38 @@ All routes below enforce the double-submit CSRF token on unsafe methods.
 
 Override validation, the allowlist and the response shapes are specified in [theme-system.md](theme-system.md).
 
+## Dashboard and diary endpoints (implemented — Phase 4)
+
+### `/api/dashboard`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | Aggregated overview; `403` when the user has no active household |
+
+Response `data`: `{ user, household, diary, tasks, calendar, meals, shopping, inventory, finance }`. `diary` is `status: 'available'` with `count` + `recent` (five content-free items) or `status: 'empty'`; the six future modules always return `status: 'not_available'`.
+
+### `/api/diary`
+
+All routes require a session and an active household (`requireHousehold`). Entries are scoped to `{ householdId, userId }` — other members' entries never resolve (`404`).
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/meta` | session + household | Mood catalog + my tag list (registered before `/:id`) |
+| GET | `/` | session + household | List: `search`, `from`, `to`, `mood`, `tag`, `page`, `limit` (≤50) → `{ items, page, limit, total, totalPages }` |
+| POST | `/` | session + household | `201 { entry }`; rate limited (`diary-write`) |
+| GET | `/:id` | session + household | Detail = list shape + `content` + `attachments[]` |
+| PATCH | `/:id` | session + household | Partial update; unknown mood/invalid fields → `400` |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }`; cascades tags/attachments and unlinks files |
+| POST | `/:id/attachments` | session + household | Raw binary body, `X-Filename` header; `201 { attachment }`; ≤5 per entry, 5 MB, `diary-upload` rate limit |
+| GET | `/:id/attachments/:attachmentId` | session + household | Streams bytes (`nosniff`, private cache); `?download=1` forces download |
+| DELETE | `/:id/attachments/:attachmentId` | session + household | Removes row and file |
+
+List items carry `excerpt` (whitespace-collapsed, 160 chars) and `attachmentCount`; `content` appears only on the detail endpoint. Ordering is `entryDate DESC, timeOfDay ASC, createdAt ASC`. Request bodies over 5 MB return `413 VALIDATION_ERROR`. Full design: [diary.md](diary.md).
+
 ## Planned endpoint map (future phases)
 
 | Phase | Base path | Endpoints (representative) |
 | --- | --- | --- |
-| 4 | `/api/dashboard` | daily overview aggregate |
-| 4 | `/api/diary` | entries CRUD, search, tags, attachments, mood |
 | 5 | `/api/tasks` | tasks CRUD, complete, categories, templates, recurrences |
 | 5 | `/api/calendar` | events CRUD, ranged queries |
 | 6 | `/api/meals`, `/api/recipes` | meal plans, recipes with ingredients, favorites |

@@ -9,8 +9,9 @@ import { currentSession, loadSession, clearCachedSession } from './state/session
    account menu and current-page marking. Pages call initShell() once. */
 
 const NAV_ITEMS = [
-  { href: '/pages/dashboard-preview.html', label: 'Dashboard', icon: 'grid' },
+  { href: '/pages/dashboard.html', label: 'Dashboard', icon: 'grid' },
   { href: '/', label: 'Home', icon: 'home' },
+  { href: '/pages/diary.html', label: 'Diary', icon: 'book' },
   { href: '/pages/household.html', label: 'Household', icon: 'users' },
   { href: '/pages/appearance.html', label: 'Appearance', icon: 'palette' },
   { href: '/pages/profile.html', label: 'Profile', icon: 'user' },

@@ -2,10 +2,14 @@
 
 A warm, modern household management web application — a personal digital household companion for diary, tasks, meals, shopping, inventory, finances, family and home.
 
-> **Status:** Phase 0–3 (architecture + foundation + authentication/household management + UI foundation/theme engine) complete.
-> The API server, PostgreSQL and Prisma are connected and verified; users can register, sign in, manage households and customize the app's appearance (nine themes, light/dark/system modes). Business modules arrive phase by phase — see [docs/implementation-plan.md](docs/implementation-plan.md).
+> **Status:** Phase 0–4 (architecture + foundation + authentication/household management + UI foundation/theme engine + dashboard/diary) complete.
+> The API server, PostgreSQL and Prisma are connected and verified; users can register, sign in, manage households, customize the app's appearance (nine themes, light/dark/system modes), read their dashboard and write diary entries with photos. Remaining modules arrive phase by phase — see [docs/implementation-plan.md](docs/implementation-plan.md).
 
-## Planned modules
+## Modules
+
+**Delivered:** authentication and household management, appearance/themes, dashboard (real aggregation — no mock data), diary (timeline, search and filters, moods, tags, photo attachments).
+
+**Planned (phase by phase):**
 
 | Area | Modules |
 | --- | --- |
@@ -184,6 +188,7 @@ docker compose down
 - [Database design](docs/database-design.md)
 - [API design](docs/api-design.md)
 - [Authentication](docs/authentication.md)
+- [Diary module](docs/diary.md)
 - [Theme system and UI design system](docs/theme-system.md)
 - [Development workflow](docs/development-workflow.md)
 - [AI architecture (Phase 10 plan)](docs/ai-architecture.md)
@@ -196,7 +201,7 @@ docker compose down
 | 1 | Foundation: Node.js, PostgreSQL, Prisma, Docker, Git, docs, health check | Complete |
 | 2 | Authentication and household management | Complete |
 | 3 | UI foundation and theme engine | Complete |
-| 4 | Dashboard and diary | Planned |
+| 4 | Dashboard and diary | Complete |
 | 5 | Tasks and calendar | Planned |
 | 6 | Meals, recipes, shopping, inventory | Planned |
 | 7 | Finance, bills, budgets, reports | Planned |
