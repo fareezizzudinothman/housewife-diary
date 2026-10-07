@@ -11,6 +11,7 @@ import {
 import { logoutUser } from '../api/auth.js';
 import { requireSession, clearCachedSession } from '../state/session.js';
 import { readFormData, setBusy, setStatus, describeError } from '../utils/forms.js';
+import { initShell, updateUserChip } from '../shell.js';
 import { hasAtLeast } from '/shared/roles.js';
 
 const createForm = document.querySelector('#create-household-form');
@@ -196,10 +197,11 @@ logoutButton.addEventListener('click', async () => {
 });
 
 async function init() {
-  const session = await requireSession();
+  const [session] = await Promise.all([requireSession(), initShell({ withUser: false })]);
   if (!session) {
     return;
   }
+  updateUserChip(session.user);
   await renderHouseholds();
 }
 

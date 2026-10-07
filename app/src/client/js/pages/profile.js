@@ -9,6 +9,7 @@ import {
 import { updateMe } from '../api/users.js';
 import { requireSession, clearCachedSession } from '../state/session.js';
 import { readFormData, setBusy, setStatus, describeError } from '../utils/forms.js';
+import { initShell, updateUserChip } from '../shell.js';
 
 const profileForm = document.querySelector('#profile-form');
 const profileStatus = document.querySelector('#profile-status');
@@ -87,11 +88,12 @@ async function renderSessions() {
 }
 
 async function init() {
-  const session = await requireSession();
+  const [session] = await Promise.all([requireSession(), initShell({ withUser: false })]);
   if (!session) {
     return;
   }
   const { user, households } = session;
+  updateUserChip(user);
 
   profileForm.querySelector('#name').value = user.name;
   populateTimezone(user.timezone);

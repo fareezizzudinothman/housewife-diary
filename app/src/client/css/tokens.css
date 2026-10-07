@@ -1,0 +1,112 @@
+/* Design tokens — the non-color half of the contract (docs/theme-system.md).
+   Colors live in themes.css (fallbacks) and are overridden at runtime by
+   js/theme/engine.js from the preset stored in the database.
+   Components must only consume variables — never hardcoded values. */
+
+:root {
+  /* ---- Typography ---- */
+  --font-family-base: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-family-display: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+
+  --text-xs: 0.78rem;
+  --text-sm: 0.88rem;
+  --text-base: 1rem;
+  --text-md: 1.12rem;
+  --text-lg: 1.3rem;
+  --text-xl: clamp(1.65rem, 4vw, 2.15rem);
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.25;
+  --leading-base: 1.6;
+
+  /* ---- Spacing scale ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* ---- Radii ---- */
+  --radius-card: 18px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+
+  /* ---- Shadows ---- */
+  --shadow-card: 0 1px 2px rgba(61, 56, 51, 0.04), 0 10px 28px -14px rgba(61, 56, 51, 0.18);
+  --shadow-pop: 0 2px 6px rgba(61, 56, 51, 0.06), 0 16px 40px -12px rgba(61, 56, 51, 0.22);
+  --shadow-overlay: 0 8px 20px rgba(20, 14, 17, 0.14), 0 32px 72px -24px rgba(20, 14, 17, 0.35);
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-fast: 140ms var(--ease-out);
+  --transition-base: 220ms var(--ease-out);
+
+  /* ---- Layout ---- */
+  --header-height: 60px;
+  --sidebar-width: 240px;
+  --sidebar-width-collapsed: 68px;
+  --bottomnav-height: 62px;
+  --content-max: 70rem;
+  --tap-min: 44px;
+
+  /* ---- Density (data-density) ---- */
+  --pad-card: 1.35rem;
+  --gap-stack: 1rem;
+  --control-height: 2.6rem;
+  --font-size-body: 1rem;
+  --row-pad-y: 0.7rem;
+
+  /* ---- Derived colors (recomputed from preset colors) ---- */
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  --color-secondary-soft: color-mix(in srgb, var(--color-secondary) 14%, var(--color-surface));
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
+  --color-success-soft: color-mix(in srgb, var(--color-success) 10%, var(--color-surface));
+  --color-warning-soft: color-mix(in srgb, var(--color-warning) 10%, var(--color-surface));
+  --color-danger-soft: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface));
+  --color-info-soft: color-mix(in srgb, var(--color-info) 10%, var(--color-surface));
+
+  /* Text on soft backgrounds: darkened in light mode, plain color in dark
+     mode (engine swaps --*-strong under [data-color-mode='dark']). */
+  --color-primary-strong: color-mix(in srgb, var(--color-primary) 82%, #14100e);
+  --color-success-strong: color-mix(in srgb, var(--color-success) 78%, #14100e);
+  --color-warning-strong: color-mix(in srgb, var(--color-warning) 78%, #14100e);
+  --color-danger-strong: color-mix(in srgb, var(--color-danger) 78%, #14100e);
+  --color-info-strong: color-mix(in srgb, var(--color-info) 78%, #14100e);
+
+  /* Foreground for solid primary/danger buttons — engine recomputes them for
+     each preset so light-on-dark always clears WCAG AA. */
+  --color-on-primary: #ffffff;
+  --color-on-danger: #ffffff;
+
+  /* ---- Chart palette (derived; dashboard mock uses slots 1–6) ---- */
+  --chart-1: var(--color-primary);
+  --chart-2: var(--color-secondary);
+  --chart-3: var(--color-accent);
+  --chart-4: var(--color-info);
+  --chart-5: var(--color-success);
+  --chart-6: var(--color-warning);
+}
+
+[data-density='compact'] {
+  --pad-card: 1rem;
+  --gap-stack: 0.75rem;
+  --control-height: 2.25rem;
+  --font-size-body: 0.95rem;
+  --row-pad-y: 0.5rem;
+  --text-xl: clamp(1.45rem, 4vw, 1.85rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-base: 0ms;
+  }
+}

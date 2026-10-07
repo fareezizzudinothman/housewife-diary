@@ -1,5 +1,6 @@
 import { resetPassword } from '../api/auth.js';
 import { readFormData, setBusy, setStatus, describeError } from '../utils/forms.js';
+import { initShell } from '../shell.js';
 
 const form = document.querySelector('#reset-password-form');
 const status = document.querySelector('#form-status');
@@ -29,3 +30,5 @@ form.addEventListener('submit', async (event) => {
     setBusy(form, false);
   }
 });
+
+initShell({ withUser: false }).catch(() => {});

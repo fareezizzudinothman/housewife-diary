@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Choose how Housewife Diary looks.">
+  <title>Appearance — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Appearance">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Settings</p>
+            <h1>Appearance</h1>
+            <p>Pick a theme, tune color mode, density and navigation — changes save instantly.</p>
+          </div>
+        </div>
+
+        <section class="card">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Color mode</h2>
+              <p>System follows your device’s light or dark setting.</p>
+            </div>
+          </div>
+          <div class="segmented" data-segmented="colorMode" role="group" aria-label="Color mode">
+            <button type="button" class="segmented__option" data-value="SYSTEM" aria-pressed="true"><span data-icon="monitor" data-icon-size="sm"></span> System</button>
+            <button type="button" class="segmented__option" data-value="LIGHT" aria-pressed="false"><span data-icon="sun" data-icon-size="sm"></span> Light</button>
+            <button type="button" class="segmented__option" data-value="DARK" aria-pressed="false"><span data-icon="moon" data-icon-size="sm"></span> Dark</button>
+          </div>
+          <p class="form-status" data-mode-hint hidden>This theme is always dark — color mode is locked.</p>
+        </section>
+
+        <section class="card">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Theme presets</h2>
+              <p>Nine hand-tuned palettes, all verified for WCAG AA contrast.</p>
+            </div>
+          </div>
+          <div class="preset-grid" data-preset-grid></div>
+        </section>
+
+        <section class="card">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Custom colors</h2>
+              <p>Fine-tune individual colors of the selected preset.</p>
+            </div>
+            <button type="button" class="btn btn--ghost btn--small" data-clear-overrides>Clear custom colors</button>
+          </div>
+          <div class="stack" data-color-fields></div>
+          <div class="divider" role="presentation"></div>
+          <div class="form" data-radius-fields>
+            <div class="field">
+              <label for="radius-card">Card corners <span class="field-hint"><output data-radius-card-output>18px</output></span></label>
+              <input type="range" id="radius-card" min="0" max="40" step="1" value="18" data-radius="--radius-card">
+            </div>
+            <div class="field">
+              <label for="radius-control">Control corners <span class="field-hint"><output data-radius-control-output>10px</output></span></label>
+              <input type="range" id="radius-control" min="0" max="40" step="1" value="10" data-radius="--radius-control">
+            </div>
+          </div>
+          <p class="form-status" data-override-status role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="card">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Layout</h2>
+              <p>How much breathing room, and where the navigation lives.</p>
+            </div>
+          </div>
+          <div class="stack">
+            <div>
+              <h4>Density</h4>
+              <div class="segmented" data-segmented="density" role="group" aria-label="Density">
+                <button type="button" class="segmented__option" data-value="COMFORTABLE" aria-pressed="true">Comfortable</button>
+                <button type="button" class="segmented__option" data-value="COMPACT" aria-pressed="false">Compact</button>
+              </div>
+            </div>
+            <div>
+              <h4>Navigation</h4>
+              <div class="segmented" data-segmented="navStyle" role="group" aria-label="Navigation style">
+                <button type="button" class="segmented__option" data-value="SIDEBAR" aria-pressed="true"><span data-icon="menu" data-icon-size="sm"></span> Sidebar</button>
+                <button type="button" class="segmented__option" data-value="BOTTOM" aria-pressed="false"><span data-icon="grid" data-icon-size="sm"></span> Bottom bar</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Reset</h2>
+              <p>Restore the default theme, colors and layout to their starting values.</p>
+            </div>
+            <button type="button" class="btn btn--danger btn--small" data-reset-appearance>Reset to defaults</button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/appearance.js"></script>
+</body>
+</html>

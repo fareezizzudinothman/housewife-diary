@@ -1,4 +1,7 @@
 import { getHealth } from './api/health.js';
+import { initShell } from './shell.js';
+
+initShell({ withUser: false }).catch(() => {});
 
 const statusText = document.querySelector('#status-text');
 

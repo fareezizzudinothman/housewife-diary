@@ -5,71 +5,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Your Housewife Diary profile.">
   <title>Profile — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/themes.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/responsive.css">
 </head>
-<body>
-  <main class="page">
-    <header class="app-header">
-      <p class="app-brand"><a href="/">Housewife Diary</a></p>
-      <div class="header-row">
-        <h1>Your profile</h1>
-        <button type="button" id="logout-button" class="btn btn--secondary">Sign out</button>
+<body data-page-title="Profile">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Account</p>
+            <h1>Your profile</h1>
+            <p>Name, timezone and the household you are working in.</p>
+          </div>
+          <button type="button" id="logout-button" class="btn btn--ghost">Sign out</button>
+        </div>
+
+        <section class="card">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Profile</h2>
+              <p>How your household sees you.</p>
+            </div>
+          </div>
+          <p id="verified-note" class="form-status"></p>
+          <button type="button" id="resend-verification-button" class="btn btn--secondary btn--small" hidden>Resend verification email</button>
+          <form id="profile-form" class="form" novalidate>
+            <div class="field">
+              <label for="name">Name</label>
+              <input type="text" id="name" name="name" maxlength="80" required>
+            </div>
+            <div class="field">
+              <label for="timezone">Timezone</label>
+              <select id="timezone" name="timezone" required></select>
+            </div>
+            <div class="field">
+              <label for="active-household">Active household</label>
+              <select id="active-household" name="activeHouseholdId"></select>
+            </div>
+            <button type="submit" class="btn btn--primary">Save profile</button>
+            <p id="profile-status" class="form-status" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="card">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Change password</h2>
+              <p>At least 10 characters, checked against common passwords.</p>
+            </div>
+          </div>
+          <form id="password-form" class="form" novalidate>
+            <div class="field">
+              <label for="currentPassword">Current password</label>
+              <input type="password" id="currentPassword" name="currentPassword" autocomplete="current-password" required>
+            </div>
+            <div class="field">
+              <label for="newPassword">New password <span class="field-hint">at least 10 characters</span></label>
+              <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" minlength="10" required>
+            </div>
+            <div class="field">
+              <label for="confirmPassword">Confirm new password</label>
+              <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" minlength="10" required>
+            </div>
+            <button type="submit" class="btn btn--primary">Update password</button>
+            <p id="password-status" class="form-status" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="card">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Active sessions</h2>
+              <p>Devices that are currently signed in.</p>
+            </div>
+          </div>
+          <div id="sessions-list" class="item-list"></div>
+          <p id="sessions-status" class="form-status" role="status" aria-live="polite"></p>
+          <button type="button" id="revoke-other-sessions" class="btn btn--secondary">Sign out all other sessions</button>
+        </section>
       </div>
-    </header>
+    </main>
 
-    <section class="card">
-      <h2>Profile</h2>
-      <p id="verified-note" class="form-status"></p>
-      <button type="button" id="resend-verification-button" class="btn btn--secondary btn--small" hidden>Resend verification email</button>
-      <form id="profile-form" class="form" novalidate>
-        <div class="field">
-          <label for="name">Name</label>
-          <input type="text" id="name" name="name" maxlength="80" required>
-        </div>
-        <div class="field">
-          <label for="timezone">Timezone</label>
-          <select id="timezone" name="timezone" required></select>
-        </div>
-        <div class="field">
-          <label for="active-household">Active household</label>
-          <select id="active-household" name="activeHouseholdId"></select>
-        </div>
-        <button type="submit" class="btn btn--primary">Save profile</button>
-        <p id="profile-status" class="form-status" role="status" aria-live="polite"></p>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>Change password</h2>
-      <form id="password-form" class="form" novalidate>
-        <div class="field">
-          <label for="currentPassword">Current password</label>
-          <input type="password" id="currentPassword" name="currentPassword" autocomplete="current-password" required>
-        </div>
-        <div class="field">
-          <label for="newPassword">New password <span class="field-hint">at least 10 characters</span></label>
-          <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" minlength="10" required>
-        </div>
-        <div class="field">
-          <label for="confirmPassword">Confirm new password</label>
-          <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" minlength="10" required>
-        </div>
-        <button type="submit" class="btn btn--primary">Update password</button>
-        <p id="password-status" class="form-status" role="status" aria-live="polite"></p>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>Active sessions</h2>
-      <div id="sessions-list" class="item-list"></div>
-      <p id="sessions-status" class="form-status" role="status" aria-live="polite"></p>
-      <button type="button" id="revoke-other-sessions" class="btn btn--secondary">Sign out all other sessions</button>
-    </section>
-  </main>
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
   <script type="module" src="/js/pages/profile.js"></script>
 </body>
 </html>

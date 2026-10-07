@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Housewife Diary — your personal digital household companion.">
   <title>Housewife Diary</title>
+  <script src="js/theme/boot.js"></script>
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/themes.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
@@ -12,30 +14,65 @@
   <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
-  <main class="page">
-    <header class="app-header">
-      <p class="app-brand">Housewife Diary</p>
-      <div class="header-row">
-        <h1>Your home, beautifully organized.</h1>
-        <div class="header-actions">
-          <a class="btn btn--secondary" href="/pages/login.html">Sign in</a>
-          <a class="btn" href="/pages/register.html">Create account</a>
-        </div>
+  <div class="landing">
+    <header class="landing__bar">
+      <a class="auth-brand" href="/"><span data-icon="brand" data-icon-size="md"></span> Housewife Diary</a>
+      <div class="cluster">
+        <button type="button" class="icon-btn" data-theme-toggle aria-label="Color mode"></button>
+        <a class="btn btn--secondary" href="/pages/login.html">Sign in</a>
+        <a class="btn btn--primary" href="/pages/register.html">Create account</a>
       </div>
-      <p class="app-tagline">A warm personal companion for your diary, meals, tasks, shopping and household finances.</p>
     </header>
 
-    <section class="card" aria-live="polite">
-      <h2>System status</h2>
-      <p id="status-text" class="status status--pending">Checking services…</p>
-    </section>
+    <main class="landing__hero">
+      <p class="eyebrow">Your household companion</p>
+      <h1>Your home, beautifully organized.</h1>
+      <p>A warm personal companion for your diary, meals, tasks, shopping and household finances — calm, feminine and made for real household life.</p>
 
-    <section class="card">
-      <h2>Getting started</h2>
-      <p>Create an account, sign in and set up your household — roles for the whole family: owner, admin, member and viewer.</p>
-      <p>Diary, tasks, meal planner and finance modules arrive over the coming phases. See the project roadmap in the documentation.</p>
-    </section>
-  </main>
+      <div class="landing__actions">
+        <a class="btn btn--primary" href="/pages/register.html">Create account</a>
+        <a class="btn btn--secondary" href="/pages/login.html">Sign in</a>
+      </div>
+
+      <div class="landing__grid">
+        <div class="landing__feature">
+          <span data-icon="palette" data-icon-size="md"></span>
+          <h3>Nine hand-tuned themes</h3>
+          <p>Light, dark or system — every palette verified for readable contrast.</p>
+        </div>
+        <div class="landing__feature">
+          <span data-icon="users" data-icon-size="md"></span>
+          <h3>Households for everyone</h3>
+          <p>Owner, admin, member and viewer roles for the whole family.</p>
+        </div>
+        <div class="landing__feature">
+          <span data-icon="book" data-icon-size="md"></span>
+          <h3>Diary</h3>
+          <p>A private page for every day (arriving over the coming phases).</p>
+        </div>
+        <div class="landing__feature">
+          <span data-icon="utensils" data-icon-size="md"></span>
+          <h3>Meals &amp; recipes</h3>
+          <p>Plan the week's kitchen with ease (arriving over the coming phases).</p>
+        </div>
+        <div class="landing__feature">
+          <span data-icon="cart" data-icon-size="md"></span>
+          <h3>Shopping &amp; inventory</h3>
+          <p>Never forget the paneer again (arriving over the coming phases).</p>
+        </div>
+        <div class="landing__feature">
+          <span data-icon="wallet" data-icon-size="md"></span>
+          <h3>Household finances</h3>
+          <p>Track spending against your budget (arriving over the coming phases).</p>
+        </div>
+      </div>
+    </main>
+
+    <footer class="landing__foot">
+      <p id="status-text" class="status status--pending">Checking services…</p>
+      <p>Diary, tasks, meal planner and finance modules arrive over the coming phases.</p>
+    </footer>
+  </div>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
