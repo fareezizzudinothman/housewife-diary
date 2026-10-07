@@ -5,9 +5,9 @@ REST over HTTP, JSON only, mounted under `/api`. All endpoints follow the conven
 ## Conventions
 
 - **Methods:** `GET` (read), `POST` (create/actions), `PATCH` (partial update), `PUT` (full update where warranted), `DELETE` (remove). No verbs in paths; actions use a sub-resource where necessary (e.g. `POST /api/auth/login`).
-- **Auth:** from Phase 2, every module route requires an authenticated session (HTTP-only cookie); authorization resolves the active household server-side. Unauthenticated → `401 UNAUTHORIZED`; wrong household/role → `403 FORBIDDEN`.
+- **Auth:** every private route requires an authenticated session (HTTP-only cookie); authorization resolves the active household server-side. Unauthenticated → `401 UNAUTHORIZED`; wrong household/role → `403 FORBIDDEN`; cross-household resource ids → `404 NOT_FOUND` (no existence leaks).
 - **Validation:** request bodies/queries validated in `src/server/validators` before controllers act; failures return `400 VALIDATION_ERROR` with per-field `details`.
-- **Rate limiting:** applied to auth endpoints first (Phase 2), then to write endpoints generally.
+- **Rate limiting:** applied to auth endpoints (login/register/reset/verification, per IP and per account), then to write endpoints generally.
 - **Pagination:** list endpoints (from Phase 4) accept `page`/`limit` and return `{ items, page, limit, total }` inside the standard success envelope.
 - **Time:** ISO-8601 strings in UTC; dates as `YYYY-MM-DD`.
 
@@ -68,6 +68,49 @@ Error:
 
 - `503` — `DATABASE_ERROR` envelope when PostgreSQL is unreachable.
 - Used by the Compose healthchecks (`wget` from inside the app container).
+
+## Authentication, user and household endpoints (implemented — Phase 2)
+
+All routes below enforce the double-submit CSRF token on unsafe methods.
+
+### `/api/auth`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/csrf` | — | Issues the `hd_csrf` cookie + token |
+| POST | `/register` | — | `201`; auto-login; sends verification mail; rate limited |
+| POST | `/login` | — | Rate limited + per-account lockout (`429` + `Retry-After`) |
+| POST | `/logout` | session | Revokes the session, clears the cookie |
+| GET | `/session` | session | Current user + session + household list |
+| POST | `/forgot-password` | — | Uniform `200` whether or not the email exists |
+| POST | `/reset-password` | — | Single-use token; revokes all sessions |
+| POST | `/change-password` | session | Requires current password; revokes other sessions |
+| GET | `/verify-email` | — | Single-use token from the mail |
+| POST | `/verify-email/resend` | session | `409` once verified; per-account throttle |
+| GET | `/sessions` | session | List active sessions |
+| DELETE | `/sessions/other` | session | Revoke all other sessions |
+| DELETE | `/sessions/:id` | session | Revoke one session |
+
+### `/api/users`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/me` | session | Profile |
+| PATCH | `/me` | session | Name, timezone, active household (`404` if not a member) |
+
+### `/api/households`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| POST | `/` | session | Creator becomes OWNER; first household becomes active |
+| GET | `/` | session | My households with role, member count, `isActive` |
+| GET | `/:id` | membership | `404` for non-members |
+| POST | `/:id/switch` | membership | Sets `activeHouseholdId` |
+| GET | `/:id/members` | membership | Member list |
+| POST | `/:id/members` | admin+ | Invite by email; owner-only `ADMIN` role |
+| PATCH | `/:id/members/:userId` | admin+ | Role change; owner-only ownership transfer (`OWNER`) |
+| DELETE | `/:id/members/:userId` | admin+ | Remove (or self → leave) |
+| POST | `/:id/leave` | membership | Owner must transfer first (`409`) |
 
 ## Planned endpoint map (per phase)
 

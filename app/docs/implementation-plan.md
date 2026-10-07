@@ -8,7 +8,7 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 | --- | --- | --- |
 | 0 | Architecture and project specification | **Complete** |
 | 1 | Foundation: Node.js, PostgreSQL, Prisma, Docker, Git, documentation, health check | **Complete** |
-| 2 | Authentication and household management | Next |
+| 2 | Authentication and household management | **Complete** |
 | 3 | UI foundation and theme engine | Planned |
 | 4 | Dashboard and diary | Planned |
 | 5 | Tasks and calendar | Planned |
@@ -38,7 +38,7 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 - `prisma generate` / `prisma migrate status` succeed against the database.
 - No secrets in Git; `.env` files ignored; working tree clean after commit.
 
-## Phase 2 — Authentication and household management (next)
+## Phase 2 — Authentication and household management (delivered)
 
 **Scope:**
 
@@ -53,6 +53,13 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 **Out of scope:** any diary/task/finance feature, themes, AI.
 
 **Design:** [authentication.md](authentication.md), [database-design.md](database-design.md), [api-design.md](api-design.md).
+
+### Completion criteria (met)
+
+- `npm test` passes: auth flows, password/token flows, role matrix, cross-household isolation (404), config validation.
+- Migration `auth_core` applied; `prisma migrate status` reports an up-to-date schema.
+- `docker compose up -d --build` healthy; smoke-tested register → create household → session → login through the container.
+- No secrets in Git; `.env`/`.env.example` carry `SESSION_SECRET`, Compose requires it in the app service.
 
 ## Later phases (summary scope)
 

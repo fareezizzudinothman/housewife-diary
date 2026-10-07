@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Create your Housewife Diary account.">
+  <title>Create account — Housewife Diary</title>
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body>
+  <main class="page page--narrow">
+    <header class="app-header">
+      <p class="app-brand"><a href="/">Housewife Diary</a></p>
+      <h1>Create your account</h1>
+      <p class="app-tagline">A warm personal companion for your whole household.</p>
+    </header>
+
+    <section class="card">
+      <h2>Register</h2>
+      <form id="register-form" class="form" novalidate>
+        <div class="field">
+          <label for="name">Your name</label>
+          <input type="text" id="name" name="name" autocomplete="name" maxlength="80" required>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="password">Password <span class="field-hint">at least 10 characters</span></label>
+          <input type="password" id="password" name="password" autocomplete="new-password" minlength="10" required>
+        </div>
+        <div class="field">
+          <label for="confirmPassword">Confirm password</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" minlength="10" required>
+        </div>
+        <button type="submit" class="btn btn--primary">Create account</button>
+        <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
+      </form>
+      <p class="form-links">Already have an account? <a href="/pages/login.html">Sign in</a></p>
+    </section>
+  </main>
+  <script type="module" src="/js/pages/register.js"></script>
+</body>
+</html>

@@ -78,7 +78,7 @@ docker compose down            # stop (data persists in postgres_data volume)
 - **Unit (node:test):** pure logic — config parsing, validators, service logic with faked repositories.
 - **Integration (node:test):** real app + real PostgreSQL (ephemeral ports) — API contracts, envelopes, auth boundaries, household isolation.
 - **Manual smoke:** `curl /api/health`, browse the client, theme behavior.
-- A feature is not complete until its critical behavior has a failing-then-passing test. Tests requiring auth (Phase 2+) use a test helper that creates authenticated sessions.
+- A feature is not complete until its critical behavior has a failing-then-passing test. Tests requiring auth use the helpers in `tests/helpers/` (cookie-jar API client with automatic CSRF, fixtures for creating users/households).
 
 ## Pre-push checklist
 

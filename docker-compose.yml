@@ -9,6 +9,7 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:?set POSTGRES_USER in the root .env}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in the root .env}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB in the root .env}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in the root .env}
     ports:
       - "${APP_PORT:-3200}:3000"
     depends_on:

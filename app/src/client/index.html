@@ -15,7 +15,13 @@
   <main class="page">
     <header class="app-header">
       <p class="app-brand">Housewife Diary</p>
-      <h1>Your home, beautifully organized.</h1>
+      <div class="header-row">
+        <h1>Your home, beautifully organized.</h1>
+        <div class="header-actions">
+          <a class="btn btn--secondary" href="/pages/login.html">Sign in</a>
+          <a class="btn" href="/pages/register.html">Create account</a>
+        </div>
+      </div>
       <p class="app-tagline">A warm personal companion for your diary, meals, tasks, shopping and household finances.</p>
     </header>
 
@@ -26,8 +32,8 @@
 
     <section class="card">
       <h2>Getting started</h2>
-      <p>The project foundation is live — the API server, PostgreSQL and Prisma are connected and ready.</p>
-      <p>Modules such as the diary, tasks, meal planner and finances arrive over the coming phases. See the project roadmap in the documentation.</p>
+      <p>Create an account, sign in and set up your household — roles for the whole family: owner, admin, member and viewer.</p>
+      <p>Diary, tasks, meal planner and finance modules arrive over the coming phases. See the project roadmap in the documentation.</p>
     </section>
   </main>
   <script type="module" src="js/app.js"></script>
