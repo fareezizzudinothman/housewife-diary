@@ -2,6 +2,7 @@
 // Phase 2 (authentication) adds the identity model: users, sessions,
 // households, household_members, password_reset_tokens and
 // email_verification_tokens.
+// Phase 3 (theme engine) adds themes and user_preferences.
 
 generator client {
   provider = "prisma-client-js"
@@ -20,6 +21,40 @@ enum HouseholdRole {
   VIEWER
 
   @@map("household_role")
+}
+
+// Phase 3 — theme engine (see docs/theme-system.md).
+
+// Which color schemes a preset provides: LIGHT and/or DARK token maps.
+enum ThemeMode {
+  LIGHT
+  DARK
+  BOTH
+
+  @@map("theme_mode")
+}
+
+// User's color-mode preference; SYSTEM follows prefers-color-scheme.
+enum ColorMode {
+  LIGHT
+  DARK
+  SYSTEM
+
+  @@map("color_mode")
+}
+
+enum Density {
+  COMPACT
+  COMFORTABLE
+
+  @@map("density")
+}
+
+enum NavStyle {
+  SIDEBAR
+  BOTTOM
+
+  @@map("nav_style")
 }
 
 model User {
@@ -42,6 +77,7 @@ model User {
   memberships             HouseholdMember[]
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  preferences             UserPreference?
 
   @@map("users")
 }
@@ -126,4 +162,46 @@ model EmailVerificationToken {
 
   @@index([userId])
   @@map("email_verification_tokens")
+}
+
+// Built-in theme presets, seeded by migration. `tokens` is JSON:
+// { "light": { "--color-primary": "#…", … }, "dark": { … } }
+// Midnight ships dark only (mode = DARK).
+model Theme {
+  id        String    @id
+  slug      String    @unique
+  name      String
+  mood      String?
+  mode      ThemeMode @default(BOTH)
+  isDefault Boolean   @default(false) @map("is_default")
+  sortOrder Int       @default(0) @map("sort_order")
+  tokens    Json
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userPreferences UserPreference[]
+
+  @@map("themes")
+}
+
+// One row per user (lazily created on first theme read/write).
+model UserPreference {
+  id       String  @id @default(cuid())
+  userId   String  @unique @map("user_id")
+  themeId  String? @map("theme_id")
+  // Variable → value map limited server-side to the override allowlist.
+  themeOverrides Json? @map("theme_overrides")
+
+  colorMode ColorMode @default(SYSTEM) @map("color_mode")
+  density   Density   @default(COMFORTABLE)
+  navStyle  NavStyle  @default(SIDEBAR) @map("nav_style")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme Theme? @relation(fields: [themeId], references: [id], onDelete: SetNull)
+
+  @@map("user_preferences")
 }
