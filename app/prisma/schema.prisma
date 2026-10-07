@@ -5,6 +5,9 @@
 // Phase 3 (theme engine) adds themes and user_preferences.
 // Phase 4 (dashboard + diary) adds moods, diary_entries, diary_tags,
 // diary_entry_tags and diary_attachments — see docs/diary.md.
+// Phase 5 (tasks + calendar) adds task_categories, tasks (with a bounded
+// recurrence materialization) and calendar_events — see docs/tasks.md
+// and docs/calendar.md.
 
 generator client {
   provider = "prisma-client-js"
@@ -70,6 +73,53 @@ enum TimeOfDay {
   @@map("time_of_day")
 }
 
+// Phase 5 — tasks and calendar (see docs/tasks.md, docs/calendar.md).
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@map("task_status")
+}
+
+// Declaration order is the sort order in PostgreSQL: LOW < MEDIUM < HIGH <
+// URGENT, so ordering by the column descending yields most urgent first.
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+
+  @@map("task_priority")
+}
+
+enum CalendarSourceType {
+  MANUAL
+  TASK
+  DIARY
+  BILL
+  FAMILY
+  MAINTENANCE
+  MEAL
+  SHOPPING
+  APPOINTMENT
+
+  @@map("calendar_source_type")
+}
+
+enum CalendarCategory {
+  GENERAL
+  FAMILY
+  HOME
+  HEALTH
+  WORK
+  OTHER
+
+  @@map("calendar_category")
+}
+
 model User {
   id                String    @id @default(cuid())
   // citext-style uniqueness: emails are normalized to lowercase in the
@@ -93,6 +143,9 @@ model User {
   preferences             UserPreference?
   diaryEntries            DiaryEntry[]
   diaryTags               DiaryTag[]
+  tasksCreated            Task[]                   @relation("TaskCreator")
+  tasksAssigned           Task[]                   @relation("TaskAssignee")
+  calendarEvents          CalendarEvent[]          @relation("EventCreator")
 
   @@map("users")
 }
@@ -123,11 +176,14 @@ model Household {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  owner         User              @relation("HouseholdOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
-  members       HouseholdMember[]
-  activeMembers User[]            @relation("UserActiveHousehold")
-  diaryEntries  DiaryEntry[]
-  diaryTags     DiaryTag[]
+  owner          User              @relation("HouseholdOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  members        HouseholdMember[]
+  activeMembers  User[]            @relation("UserActiveHousehold")
+  diaryEntries   DiaryEntry[]
+  diaryTags      DiaryTag[]
+  taskCategories TaskCategory[]
+  tasks          Task[]
+  calendarEvents CalendarEvent[]
 
   @@index([ownerUserId])
   @@map("households")
@@ -204,11 +260,11 @@ model Theme {
 
 // One row per user (lazily created on first theme read/write).
 model UserPreference {
-  id       String  @id @default(cuid())
-  userId   String  @unique @map("user_id")
-  themeId  String? @map("theme_id")
+  id             String  @id @default(cuid())
+  userId         String  @unique @map("user_id")
+  themeId        String? @map("theme_id")
   // Variable → value map limited server-side to the override allowlist.
-  themeOverrides Json? @map("theme_overrides")
+  themeOverrides Json?   @map("theme_overrides")
 
   colorMode ColorMode @default(SYSTEM) @map("color_mode")
   density   Density   @default(COMFORTABLE)
@@ -238,22 +294,22 @@ model Mood {
 // Personal diary entries, private to their author and scoped to the
 // household they were written in (see docs/diary.md).
 model DiaryEntry {
-  id          String   @id @default(cuid())
-  householdId String   @map("household_id")
-  userId      String   @map("user_id")
+  id          String    @id @default(cuid())
+  householdId String    @map("household_id")
+  userId      String    @map("user_id")
   title       String
   // Plain text only — rendered with textContent, never innerHTML.
   content     String
-  entryDate   DateTime @db.Date @map("entry_date")
+  entryDate   DateTime  @map("entry_date") @db.Date
   timeOfDay   TimeOfDay @default(EVENING) @map("time_of_day")
-  moodId      String?  @map("mood_id")
+  moodId      String?   @map("mood_id")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  household   Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mood        Mood?            @relation(fields: [moodId], references: [id], onDelete: SetNull)
+  household   Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mood        Mood?             @relation(fields: [moodId], references: [id], onDelete: SetNull)
   tags        DiaryEntryTag[]
   attachments DiaryAttachment[]
 
@@ -263,9 +319,9 @@ model DiaryEntry {
 
 // Per-user tag vocabulary (private — never leaks across users).
 model DiaryTag {
-  id          String   @id @default(cuid())
-  householdId String   @map("household_id")
-  userId      String   @map("user_id")
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  userId      String @map("user_id")
   name        String
   // Lowercased name for case-insensitive uniqueness + filtering.
   normalized  String
@@ -295,14 +351,14 @@ model DiaryEntryTag {
 // Attachment metadata is stored here; the physical file lives under
 // uploads/diary/ under a server-generated name (never the client's).
 model DiaryAttachment {
-  id      String @id @default(cuid())
-  entryId String @map("entry_id")
+  id           String @id @default(cuid())
+  entryId      String @map("entry_id")
   // Client filename, sanitized for display/download only — never a path.
   originalName String @map("original_name")
   // Server-generated: <random>.<ext> — the only name ever used on disk.
-  storedName   String   @unique @map("stored_name")
-  mimeType     String   @map("mime_type")
-  sizeBytes    Int      @map("size_bytes")
+  storedName   String @unique @map("stored_name")
+  mimeType     String @map("mime_type")
+  sizeBytes    Int    @map("size_bytes")
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -310,4 +366,108 @@ model DiaryAttachment {
 
   @@index([entryId])
   @@map("diary_attachments")
+}
+
+// Phase 5 models — task categories, tasks (bounded recurrence materialization)
+// and native calendar events. See docs/tasks.md and docs/calendar.md.
+
+model TaskCategory {
+  id          String   @id @default(cuid())
+  householdId String   @map("household_id")
+  name        String
+  // Lowercased, whitespace-collapsed form used for the uniqueness check.
+  normalized  String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@unique([householdId, normalized])
+  @@index([householdId])
+  @@map("task_categories")
+}
+
+model Task {
+  id           String  @id @default(cuid())
+  householdId  String  @map("household_id")
+  createdById  String  @map("created_by_id")
+  // Optional assignee; must be a member of the same household.
+  assignedToId String? @map("assigned_to_id")
+  categoryId   String? @map("category_id")
+
+  title       String
+  description String?
+
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueAt       DateTime?    @map("due_at")
+  completedAt DateTime?    @map("completed_at")
+
+  // Structured recurrence rule of a series head:
+  // { frequency, interval, daysOfWeek?, endDate? }. Non-null only on the
+  // series head; occurrences carry a seriesId instead. Occurrences are
+  // materialized rows within a bounded rolling window (see docs/tasks.md).
+  recurrence Json?
+  // Self-relation: head (seriesId null, recurrence set) -> occurrence rows.
+  seriesId   String? @map("series_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household  Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy  User          @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  assignedTo User?         @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  category   TaskCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  series      Task?  @relation("TaskSeries", fields: [seriesId], references: [id], onDelete: Cascade)
+  occurrences Task[] @relation("TaskSeries")
+
+  @@index([householdId, status])
+  @@index([householdId, dueAt])
+  @@index([householdId, assignedToId])
+  @@index([householdId, createdAt])
+  @@index([seriesId])
+  @@map("tasks")
+}
+
+model CalendarEvent {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+
+  title       String
+  description String?
+
+  // Inclusive bounds. For all-day events both are stored as UTC midnights of
+  // the (local) start/end calendar days; for timed events they are exact
+  // instants. endAt is always >= startAt.
+  startAt DateTime @map("start_at")
+  endAt   DateTime @map("end_at")
+  allDay  Boolean  @default(false) @map("all_day")
+
+  category              CalendarCategory @default(GENERAL)
+  location              String?
+  // Same shape as Task.recurrence; expands in-memory for ranged queries.
+  recurrence            Json?
+  // Minutes before startAt when a reminder would fire. Delivery is deferred
+  // (documented in docs/calendar.md); this is stored foundation only.
+  reminderOffsetMinutes Int?             @map("reminder_offset_minutes")
+  reminderEnabled       Boolean          @default(true) @map("reminder_enabled")
+
+  // Source abstraction: native events are MANUAL; derived items (TASK, DIARY,
+  // ...) are never persisted as CalendarEvent rows.
+  sourceType CalendarSourceType @default(MANUAL) @map("source_type")
+  sourceId   String?            @map("source_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("EventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([householdId, startAt])
+  @@index([householdId, endAt])
+  @@index([householdId, sourceType])
+  @@index([householdId, sourceId])
+  @@map("calendar_events")
 }

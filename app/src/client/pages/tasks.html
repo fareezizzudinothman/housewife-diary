@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Household tasks in Housewife Diary.">
+  <title>Tasks — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Tasks">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Plan</p>
+            <h1>Tasks</h1>
+            <p>Household to-dos, with due dates and simple repeats.</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn--ghost" data-manage-categories>Categories</button>
+            <a class="btn btn--primary" href="/pages/task-form.html">New task</a>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="segmented" data-view role="group" aria-label="Task view">
+            <button type="button" class="segmented__option" data-value="today" aria-pressed="false">Today</button>
+            <button type="button" class="segmented__option" data-value="upcoming" aria-pressed="false">Upcoming</button>
+            <button type="button" class="segmented__option" data-value="overdue" aria-pressed="false">Overdue</button>
+            <button type="button" class="segmented__option" data-value="completed" aria-pressed="false">Completed</button>
+            <button type="button" class="segmented__option" data-value="all" aria-pressed="true">All</button>
+          </div>
+        </div>
+
+        <section class="card card--flat" aria-label="Filters">
+          <form id="task-filters" class="filter-grid" novalidate>
+            <div class="field">
+              <label for="filter-search">Search</label>
+              <input type="search" id="filter-search" name="search" maxlength="100" placeholder="Title or notes…">
+            </div>
+            <div class="field">
+              <label for="filter-priority">Priority</label>
+              <select id="filter-priority" name="priority">
+                <option value="">Any priority</option>
+                <option value="URGENT">Urgent</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-category">Category</label>
+              <select id="filter-category" name="category">
+                <option value="">Any category</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-sort">Sort</label>
+              <select id="filter-sort" name="sort">
+                <option value="due">Due date</option>
+                <option value="priority">Priority</option>
+                <option value="created">Created</option>
+              </select>
+            </div>
+            <div class="filter-grid__actions">
+              <button type="submit" class="btn btn--secondary btn--small">Apply</button>
+              <button type="button" class="btn btn--ghost btn--small" data-reset>Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <p id="task-filter-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div data-task-list aria-live="polite"></div>
+
+        <nav class="pager" data-pager hidden aria-label="Task pages">
+          <button type="button" class="btn btn--secondary btn--small" data-page-prev>Previous</button>
+          <span class="pager__label" data-page-label></span>
+          <button type="button" class="btn btn--secondary btn--small" data-page-next>Next</button>
+        </nav>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/tasks.js"></script>
+</body>
+</html>

@@ -39,7 +39,7 @@ async function createHousehold(client, name = 'Dashboard Home') {
   return response.body.data;
 }
 
-const FUTURE_MODULES = ['tasks', 'calendar', 'meals', 'shopping', 'inventory', 'finance'];
+const FUTURE_MODULES = ['meals', 'shopping', 'inventory', 'finance'];
 
 test('dashboard requires authentication', async () => {
   const anonymous = newClient(baseUrl);
@@ -76,10 +76,59 @@ test('empty household reports diary empty and future modules as not_available', 
     memberCount: 1,
   });
   assert.deepEqual(dashboard.diary, { status: 'empty', count: 0, recent: [] });
+  assert.deepEqual(dashboard.tasks, {
+    status: 'empty',
+    openCount: 0,
+    dueTodayCount: 0,
+    recent: [],
+  });
+  assert.deepEqual(dashboard.calendar, { status: 'empty', upcomingCount: 0, next: [] });
 
   for (const moduleName of FUTURE_MODULES) {
     assert.deepEqual(dashboard[moduleName], { status: 'not_available' });
   }
+});
+
+test('dashboard summarises open tasks and upcoming calendar events', async () => {
+  const owner = await createUser('tasks-calendar');
+  await createHousehold(owner.client);
+
+  const now = new Date();
+  const inTwoDays = new Date(now.getTime() + 2 * 86_400_000).toISOString();
+
+  const task = await owner.client.post('/api/tasks', {
+    title: 'Buy groceries',
+    dueAt: inTwoDays,
+    priority: 'HIGH',
+  });
+  assert.equal(task.status, 201, JSON.stringify(task.body));
+
+  const event = await owner.client.post('/api/calendar', {
+    title: 'Family lunch',
+    start: inTwoDays,
+    end: new Date(new Date(inTwoDays).getTime() + 3_600_000).toISOString(),
+  });
+  assert.equal(event.status, 201, JSON.stringify(event.body));
+
+  // Events further out than a week are not part of the dashboard summary.
+  await owner.client.post('/api/calendar', {
+    title: 'Next month appointment',
+    start: new Date(now.getTime() + 20 * 86_400_000).toISOString(),
+  });
+
+  const response = await owner.client.get('/api/dashboard');
+  assert.equal(response.status, 200);
+  const dashboard = response.body.data;
+
+  assert.equal(dashboard.tasks.status, 'available');
+  assert.equal(dashboard.tasks.openCount, 1);
+  assert.equal(dashboard.tasks.recent.length, 1);
+  assert.equal(dashboard.tasks.recent[0].title, 'Buy groceries');
+  assert.equal(dashboard.tasks.recent[0].content, undefined);
+
+  assert.equal(dashboard.calendar.status, 'available');
+  assert.equal(dashboard.calendar.upcomingCount, 1);
+  assert.equal(dashboard.calendar.next[0].title, 'Family lunch');
 });
 
 test('dashboard summarises recent diary entries without leaking content', async () => {

@@ -11,9 +11,21 @@ import { getDashboard } from '../api/dashboard.js';
 
 const TIME_LABELS = { MORNING: 'Morning', AFTERNOON: 'Afternoon', EVENING: 'Evening' };
 
-const UPCOMING_MODULES = [
-  { key: 'tasks', label: 'Tasks', iconName: 'list-checks' },
-  { key: 'calendar', label: 'Calendar', iconName: 'calendar' },
+const MODULES = [
+  {
+    key: 'tasks',
+    label: 'Tasks',
+    iconName: 'list-checks',
+    href: '/pages/tasks.html',
+    meta: (module) => `${module.openCount ?? 0} open`,
+  },
+  {
+    key: 'calendar',
+    label: 'Calendar',
+    iconName: 'calendar',
+    href: '/pages/calendar.html',
+    meta: (module) => `${module.upcomingCount ?? 0} this week`,
+  },
   { key: 'meals', label: 'Meals', iconName: 'utensils' },
   { key: 'shopping', label: 'Shopping', iconName: 'cart' },
   { key: 'inventory', label: 'Inventory', iconName: 'package' },
@@ -46,7 +58,9 @@ function formatDate(isoDate) {
 
 function renderStats(dashboard) {
   const container = document.querySelector('[data-stats]');
+  const dueToday = dashboard.tasks?.dueTodayCount ?? 0;
   const stats = [
+    { label: 'Open tasks', value: String(dashboard.tasks?.openCount ?? 0), meta: dueToday > 0 ? `${dueToday} due today` : 'Nothing due today' },
     { label: 'Diary entries', value: String(dashboard.diary.count), meta: dashboard.diary.status === 'empty' ? 'Start writing' : 'Written so far' },
     { label: 'Members', value: String(dashboard.household?.memberCount ?? 0), meta: dashboard.household?.name ?? 'No household' },
     { label: 'Your role', value: dashboard.household?.role ?? '—', meta: 'In the active household' },
@@ -62,7 +76,7 @@ function renderStats(dashboard) {
       </div>`,
     )
     .join('');
-  const icons = ['book', 'users', 'user'];
+  const icons = ['list-checks', 'book', 'users', 'user'];
   const tiles = container.querySelectorAll('.stat-tile');
   stats.forEach((stat, index) => {
     const tile = tiles[index];
@@ -136,22 +150,39 @@ function renderHouseholdFacts(dashboard) {
 
 function renderModules(dashboard) {
   const container = document.querySelector('[data-modules]');
-  container.innerHTML = UPCOMING_MODULES.map(
-    () => `
-    <div class="module-tile">
-      <span class="module-tile__icon"></span>
-      <span class="module-tile__label"></span>
-      <span class="badge">Soon</span>
-    </div>`,
-  ).join('');
-  const tiles = container.querySelectorAll('.module-tile');
-  UPCOMING_MODULES.forEach((module, index) => {
-    const tile = tiles[index];
-    tile.querySelector('.module-tile__icon').innerHTML = icon(module.iconName, { size: 'sm' });
-    tile.querySelector('.module-tile__label').textContent = module.label;
-    const status = dashboard[module.key]?.status;
-    tile.title = status === 'not_available' ? `${module.label} is not available yet` : module.label;
-  });
+  container.replaceChildren();
+  for (const module of MODULES) {
+    const data = dashboard[module.key] ?? {};
+    const tag = module.href ? document.createElement('a') : document.createElement('div');
+    tag.className = 'module-tile';
+    if (module.href) {
+      tag.classList.add('module-tile--link');
+      tag.href = module.href;
+    }
+
+    const iconHost = document.createElement('span');
+    iconHost.className = 'module-tile__icon';
+    iconHost.innerHTML = icon(module.iconName, { size: 'sm' });
+
+    const label = document.createElement('span');
+    label.className = 'module-tile__label';
+    label.textContent = module.label;
+
+    tag.append(iconHost, label);
+    if (module.meta) {
+      const meta = document.createElement('span');
+      meta.className = 'module-tile__meta';
+      meta.textContent = module.meta(data);
+      tag.append(meta);
+    } else {
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = 'Soon';
+      tag.append(badge);
+      tag.title = `${module.label} is not available yet`;
+    }
+    container.append(tag);
+  }
 }
 
 function renderNoHouseholdNotice() {

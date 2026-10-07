@@ -165,6 +165,10 @@
   gap: var(--space-5);
 }
 
+.main-inner--narrow {
+  max-width: 46rem;
+}
+
 .page-head {
   display: flex;
   flex-wrap: wrap;

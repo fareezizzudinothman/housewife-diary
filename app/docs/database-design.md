@@ -1,6 +1,6 @@
 # Database design
 
-PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. Migrations so far: `20261007041913_auth_core` (Phase 2, identity tables), `20261007052226_theme_preferences` (Phase 3, theme tables) and `20261007071119_diary_core` (Phase 4, diary tables + mood seeds).
+PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. Migrations so far: `20261007041913_auth_core` (Phase 2, identity tables), `20261007052226_theme_preferences` (Phase 3, theme tables), `20261007071119_diary_core` (Phase 4, diary tables + mood seeds) and `20261007084410_tasks_core` (Phase 5, tasks + calendar tables).
 
 ## Principles
 
@@ -64,12 +64,34 @@ diary_attachments       id, diary_entry_id (FK, cascade), original_name, stored_
 
 Entries are personal to an author **within** a household: every query filters `{householdId, userId}`, so household members cannot read each other's diaries (404), and an entry belongs forever to the household it was written in. `mood_id` is `SET NULL` so deleting a catalog mood never deletes entries. Tags are per-user rows joined many-to-many; names are normalized to lowercase and deduplicated. Attachment bytes live under `app/uploads/diary/` (a Docker volume, gitignored) — the database stores metadata only, `stored_name` is server-generated and never exposed through the API. Moods are seeded by the migration (ten rows, `sort_order` 1–10).
 
+## Tasks and calendar model (Phase 5 — implemented)
+
+```text
+task_categories   id, household_id (FK, cascade), name, normalized, created_at
+                  — unique (household_id, normalized); max 50 per household in the service
+tasks             id, household_id (FK, cascade), created_by_id (FK users, cascade),
+                  assigned_to_id (FK users, SET NULL), category_id (FK, SET NULL),
+                  title, description, status (task_status), priority (task_priority),
+                  due_at, completed_at, recurrence (jsonb), series_id (FK tasks, cascade),
+                  created_at, updated_at
+                  — indexes (household_id, status), (household_id, due_at),
+                    (household_id, assigned_to_id), (household_id, created_at), (series_id)
+calendar_events   id, household_id (FK, cascade), created_by_id (FK users, cascade),
+                  title, description, start_at, end_at, all_day,
+                  category (calendar_category), location, recurrence (jsonb),
+                  reminder_offset_minutes, reminder_enabled,
+                  source_type (calendar_source_type, default MANUAL), source_id,
+                  created_at, updated_at
+                  — indexes (household_id, start_at), (household_id, end_at),
+                    (household_id, source_type), (household_id, source_id)
+```
+
+Recurring **tasks** store the rule on a series head and materialize bounded occurrence rows (`series_id` self-relation, `onDelete: Cascade`); recurring **calendar events** keep the rule on the head only and expand in memory per ranged query. `assigned_to_id` and `category_id` are `SET NULL` so removing a member or category never deletes history. `source_type`/`source_id` reserve the calendar for derived items — only `MANUAL` rows are ever persisted. Reminder columns are stored foundation; delivery arrives in Phase 9. Full design: [tasks.md](tasks.md), [calendar.md](calendar.md).
+
 ## Planned entity map by module
 
 | Module | Tables | Highlights |
 | --- | --- | --- |
-| Tasks (P5) | `tasks`, `task_categories`, `task_templates`, `task_recurrences` | priority/due/assignee; recurrence rules expand into dated tasks |
-| Calendar (P5) | `calendar_events` | unified view over tasks, bills, birthdays via queries, own events stored here |
 | Meals (P6) | `meals`, `recipes`, `recipe_ingredients`, `ingredients` | meal slots (breakfast/lunch/dinner/snack) by date; recipes favoriteable |
 | Shopping (P6) | `shopping_lists`, `shopping_items`, `stores` | purchased flags, price tracking per item/store |
 | Inventory (P6) | `inventory_items`, `inventory_categories`, `inventory_transactions` | location (pantry/fridge/freezer/supplies), quantity, minimum stock, expiry, transaction ledger (add/remove/consume) |
