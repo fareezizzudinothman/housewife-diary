@@ -1,0 +1,11 @@
+// Business models are introduced phase by phase — see docs/database-design.md.
+// Phase 2 (authentication) adds the first models: users and sessions.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
