@@ -1,0 +1,15 @@
+@media (max-width: 480px) {
+  .page {
+    padding-inline: 1rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page {
+    max-width: 52rem;
+  }
+}

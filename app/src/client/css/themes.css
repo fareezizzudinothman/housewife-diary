@@ -1,0 +1,27 @@
+/* Theme contract — presets and per-user customization arrive in Phase 3. */
+:root {
+  --color-primary: #b5537a;
+  --color-secondary: #7d9b77;
+  --color-accent: #d9a441;
+  --color-background: #faf6f1;
+  --color-surface: #ffffff;
+  --color-text: #3d3833;
+  --color-text-muted: #857c74;
+  --color-border: #eadfd6;
+
+  --color-primary-soft: #f6e3ea;
+  --color-success: #3f8a5b;
+  --color-success-soft: #e2f0e7;
+  --color-warning: #b3752e;
+  --color-warning-soft: #f7ecdc;
+  --color-danger: #b04a4a;
+  --color-danger-soft: #f7e3e3;
+
+  --radius-card: 18px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 6px 24px rgba(61, 56, 51, 0.06);
+
+  --font-family-base: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
