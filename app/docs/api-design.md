@@ -112,14 +112,21 @@ All routes below enforce the double-submit CSRF token on unsafe methods.
 | DELETE | `/:id/members/:userId` | admin+ | Remove (or self → leave) |
 | POST | `/:id/leave` | membership | Owner must transfer first (`409`) |
 
-## Planned endpoint map (per phase)
+## Theme endpoints (implemented — Phase 3)
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/api/themes` | — | Public preset catalog (slug, name, mood, mode, tokens) |
+| GET | `/api/themes/me` | session | Resolved appearance: color mode, density, nav style, preset, overrides |
+| PATCH | `/api/themes/me` | session | Partial update; empty body returns state without writing |
+| DELETE | `/api/themes/me` | session | Reset to defaults; idempotent |
+
+Override validation, the allowlist and the response shapes are specified in [theme-system.md](theme-system.md).
+
+## Planned endpoint map (future phases)
 
 | Phase | Base path | Endpoints (representative) |
 | --- | --- | --- |
-| 2 | `/api/auth` | register, login, logout, forgot-password, reset-password, change-password, verify-email, session |
-| 2 | `/api/users` | me, update profile, preferences |
-| 2 | `/api/households` | create, list mine, switch active, members add/remove/role, leave |
-| 3 | `/api/themes` | presets, get/put my theme + customization |
 | 4 | `/api/dashboard` | daily overview aggregate |
 | 4 | `/api/diary` | entries CRUD, search, tags, attachments, mood |
 | 5 | `/api/tasks` | tasks CRUD, complete, categories, templates, recurrences |

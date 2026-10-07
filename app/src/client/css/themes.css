@@ -1,27 +1,64 @@
-/* Theme contract — presets and per-user customization arrive in Phase 3. */
+/* Theme color contract — fallback palettes for first paint.
+   Source of truth: the `themes` table (9 presets, seeded by migration);
+   js/theme/engine.js merges preset tokens + user overrides onto <html> as
+   inline custom properties. These rules only cover the moment before that
+   runs (or when JS is unavailable): Rose Garden, light / dark.
+
+   Every preset supplies 13 color tokens per mode:
+   primary, secondary, accent, background, surface, surface-alt,
+   text, text-muted, border, success, warning, danger, info.
+   Soft/strong/chart variants are derived in tokens.css. */
+
 :root {
-  --color-primary: #b5537a;
+  color-scheme: light;
+
+  --color-primary: #aa4d72;
   --color-secondary: #7d9b77;
   --color-accent: #d9a441;
   --color-background: #faf6f1;
   --color-surface: #ffffff;
+  --color-surface-alt: #f5eee7;
   --color-text: #3d3833;
-  --color-text-muted: #857c74;
+  --color-text-muted: #6e655d;
   --color-border: #eadfd6;
-
-  --color-primary-soft: #f6e3ea;
-  --color-success: #3f8a5b;
-  --color-success-soft: #e2f0e7;
-  --color-warning: #b3752e;
-  --color-warning-soft: #f7ecdc;
+  --color-success: #3a8052;
+  --color-warning: #a06a26;
   --color-danger: #b04a4a;
-  --color-danger-soft: #f7e3e3;
+  --color-info: #3d7287;
+}
 
-  --radius-card: 18px;
-  --radius-control: 10px;
-  --radius-pill: 999px;
+/* Dark fallback: applied by js/theme/boot.js before first paint whenever the
+   saved (or system) color mode is dark — no white flash. */
+[data-color-mode='dark'] {
+  color-scheme: dark;
 
-  --shadow-card: 0 6px 24px rgba(61, 56, 51, 0.06);
+  --color-primary: #e08cab;
+  --color-secondary: #9dbd97;
+  --color-accent: #e5b765;
+  --color-background: #201a1d;
+  --color-surface: #2a2327;
+  --color-surface-alt: #332b30;
+  --color-text: #f2e9ea;
+  --color-text-muted: #b7a7ad;
+  --color-border: #453941;
+  --color-success: #6fbf8b;
+  --color-warning: #dda35c;
+  --color-danger: #e07a7a;
+  --color-info: #7ab3cc;
 
-  --font-family-base: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* On dark surfaces, "strong" text is just the color itself, and shadows
+     give way to borders for separation. */
+  --color-primary-strong: var(--color-primary);
+  --color-success-strong: var(--color-success);
+  --color-warning-strong: var(--color-warning);
+  --color-danger-strong: var(--color-danger);
+  --color-info-strong: var(--color-info);
+
+  /* Light pastel primaries need dark button text (AA verified). */
+  --color-on-primary: #191416;
+  --color-on-danger: #191416;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.3), 0 16px 40px -12px rgba(0, 0, 0, 0.45);
+  --shadow-overlay: 0 8px 20px rgba(0, 0, 0, 0.4), 0 32px 72px -24px rgba(0, 0, 0, 0.6);
 }

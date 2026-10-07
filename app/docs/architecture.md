@@ -57,14 +57,14 @@ User ──< household_members >── Household
 
 ## Frontend architecture
 
-- **No framework, no build step:** HTML5 pages (`src/client/pages/`) styled by a small set of CSS files driven by theme variables (`themes.css` is the variable contract).
-- **ES modules:** `js/api` (transport), `js/services` (feature logic), `js/components` (reusable DOM components), `js/pages` (page controllers), `js/state` (client state), `js/utils` (helpers).
+- **No framework, no build step:** HTML5 pages (`src/client/pages/`) styled by a fixed CSS file order driven by theme variables (`tokens.css` → `themes.css` → `base.css` → `layout.css` → `components.css` → `responsive.css`).
+- **ES modules:** `js/api` (transport), `js/services` (feature logic), `js/theme` (theme boot + engine), `js/components` (reusable DOM components), `js/pages` (page controllers), `js/state` (client state), `js/utils` (helpers), `js/shell.js` (shared app chrome).
 - **Separation of concerns:** UI code never calls `fetch` directly; it goes through `js/api`, which understands the standard response envelope.
-- **Responsive:** mobile-first CSS; a bottom-navigation pattern arrives with the Phase 3 UI foundation.
+- **Responsive:** mobile-first CSS; the app shell switches from sidebar to bottom navigation at 1024 px (or on demand via the navigation preference).
 
 ## Theme engine (Phase 3)
 
-Themes are pure CSS variable sets applied via a `data-theme` attribute plus per-user inline overrides (colors, radius, density). Theme preferences are stored per user in the database. The variable contract is specified in [theme-system.md](theme-system.md).
+Themes are pure CSS variable sets applied via `data-*` attributes on `<html>` plus per-user inline overrides (colors, radius, density, navigation style). Presets are rows in the `themes` table, preferences are stored per user in `user_preferences`, and a blocking boot script restores the cached theme before first paint. The full contract — variables, presets, API and runtime — is specified in [theme-system.md](theme-system.md).
 
 ## AI assistant (Phase 10)
 

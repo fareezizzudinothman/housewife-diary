@@ -9,7 +9,7 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 | 0 | Architecture and project specification | **Complete** |
 | 1 | Foundation: Node.js, PostgreSQL, Prisma, Docker, Git, documentation, health check | **Complete** |
 | 2 | Authentication and household management | **Complete** |
-| 3 | UI foundation and theme engine | Planned |
+| 3 | UI foundation and theme engine | **Complete** |
 | 4 | Dashboard and diary | Planned |
 | 5 | Tasks and calendar | Planned |
 | 6 | Meals, recipes, shopping, inventory | Planned |
@@ -61,9 +61,31 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 - `docker compose up -d --build` healthy; smoke-tested register → create household → session → login through the container.
 - No secrets in Git; `.env`/`.env.example` carry `SESSION_SECRET`, Compose requires it in the app service.
 
+## Phase 3 — UI foundation and theme engine (delivered)
+
+**Scope:**
+
+- Theme engine: nine seeded presets (`themes` table, JSON light/dark token sets), CSS-variable contract in `tokens.css`, first-paint boot script, client engine with system/light/dark modes, density and navigation styles, per-user overrides persisted through `GET/PATCH/DELETE /api/themes/me`.
+- Second Prisma migration: `themes` + `user_preferences` (+ enums), seeded with the preset catalog.
+- Backend module following the layering rules: `themeValidators` → `themeRepository` → `themeService` → `themeController` → `themes.routes`, mounted under `/api/themes`.
+- App shell (topbar, sidebar, bottom navigation, account menu, color-mode toggle), auth/landing layouts, responsive behaviour from 375 px up.
+- Reusable component system (CSS + JS): cards, buttons, forms, lists, tables, segmented control, dropdown, modal (+ confirm dialog), toasts, states, icon sprite, dashboard building blocks (stat tiles, chart, progress, timeline, key-value rows).
+- Pages: appearance settings (preset grid, color/radius editors, reset), dashboard preview (mock sample data only), redesigned auth/landing/profile/household pages.
+- Tests: themes API suite including a WCAG AA contrast check over every stored preset.
+
+**Out of scope:** diary/tasks/meals/recipes/shopping/inventory/finance/calendar/AI business logic (Phases 4–10); real dashboard data (preview uses mock data only).
+
+**Design:** [theme-system.md](theme-system.md), [architecture.md](architecture.md), [database-design.md](database-design.md), [api-design.md](api-design.md).
+
+### Completion criteria (met)
+
+- `npm test` passes (64 tests) including the theme API suite and the preset contrast check.
+- Migration `theme_preferences` applied; `prisma migrate status` reports an up-to-date schema.
+- `docker compose up -d --build` healthy; smoke-tested pages, assets and `/api/themes` through the container.
+- Browser-verified: all pages render without JS/network errors, theme/override persistence across reloads, responsive layouts with no horizontal overflow, keyboard focus visible.
+
 ## Later phases (summary scope)
 
-- **Phase 3:** responsive layout shell, reusable components (modal, toast, table, form, empty/loading/error states), theme engine with presets and per-user customization.
 - **Phase 4:** dashboard aggregation endpoint + diary, mood, daily activities.
 - **Phase 5:** tasks, categories, recurring tasks, calendar events.
 - **Phase 6:** meal planner, recipes, ingredients, shopping lists, pantry/inventory with transactions and low-stock alerts.
