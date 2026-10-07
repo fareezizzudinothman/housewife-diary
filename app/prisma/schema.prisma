@@ -8,6 +8,10 @@
 // Phase 5 (tasks + calendar) adds task_categories, tasks (with a bounded
 // recurrence materialization) and calendar_events — see docs/tasks.md
 // and docs/calendar.md.
+// Phase 6 (meals, recipes, shopping, inventory) adds recipes,
+// recipe_ingredients, meal_plan_entries, shopping_lists, shopping_list_items,
+// inventory_items and inventory_transactions — see docs/recipes.md,
+// docs/meals.md, docs/shopping.md and docs/inventory.md.
 
 generator client {
   provider = "prisma-client-js"
@@ -120,6 +124,53 @@ enum CalendarCategory {
   @@map("calendar_category")
 }
 
+// Phase 6 — meals, recipes, shopping and inventory (see docs/recipes.md,
+// docs/meals.md, docs/shopping.md, docs/inventory.md).
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+
+  @@map("meal_type")
+}
+
+// Shared by shopping items and inventory items so category logic exists in
+// exactly one place; extending the set is a one-line enum migration.
+enum ItemCategory {
+  PRODUCE
+  MEAT
+  SEAFOOD
+  DAIRY
+  PANTRY
+  FROZEN
+  DRINKS
+  HOUSEHOLD
+  OTHER
+
+  @@map("item_category")
+}
+
+enum InventoryLocation {
+  PANTRY
+  REFRIGERATOR
+  FREEZER
+  HOUSEHOLD
+  OTHER
+
+  @@map("inventory_location")
+}
+
+enum InventoryTransactionType {
+  PURCHASE
+  CONSUME
+  ADJUST
+  WASTE
+
+  @@map("inventory_transaction_type")
+}
+
 model User {
   id                String    @id @default(cuid())
   // citext-style uniqueness: emails are normalized to lowercase in the
@@ -146,6 +197,11 @@ model User {
   tasksCreated            Task[]                   @relation("TaskCreator")
   tasksAssigned           Task[]                   @relation("TaskAssignee")
   calendarEvents          CalendarEvent[]          @relation("EventCreator")
+  recipesCreated          Recipe[]                 @relation("RecipeCreator")
+  mealPlanEntries         MealPlanEntry[]          @relation("MealEntryCreator")
+  shoppingLists           ShoppingList[]           @relation("ShoppingListCreator")
+  inventoryItems          InventoryItem[]          @relation("InventoryItemCreator")
+  inventoryTransactions   InventoryTransaction[]   @relation("InventoryTransactionCreator")
 
   @@map("users")
 }
@@ -176,14 +232,19 @@ model Household {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  owner          User              @relation("HouseholdOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
-  members        HouseholdMember[]
-  activeMembers  User[]            @relation("UserActiveHousehold")
-  diaryEntries   DiaryEntry[]
-  diaryTags      DiaryTag[]
-  taskCategories TaskCategory[]
-  tasks          Task[]
-  calendarEvents CalendarEvent[]
+  owner                 User                   @relation("HouseholdOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  members               HouseholdMember[]
+  activeMembers         User[]                 @relation("UserActiveHousehold")
+  diaryEntries          DiaryEntry[]
+  diaryTags             DiaryTag[]
+  taskCategories        TaskCategory[]
+  tasks                 Task[]
+  calendarEvents        CalendarEvent[]
+  recipes               Recipe[]
+  mealPlanEntries       MealPlanEntry[]
+  shoppingLists         ShoppingList[]
+  inventoryItems        InventoryItem[]
+  inventoryTransactions InventoryTransaction[]
 
   @@index([ownerUserId])
   @@map("households")
@@ -470,4 +531,187 @@ model CalendarEvent {
   @@index([householdId, sourceType])
   @@index([householdId, sourceId])
   @@map("calendar_events")
+}
+
+// Phase 6 — recipes, ingredients, meal plan, shopping and inventory.
+//
+// Integration flow (no duplicated data): a recipe's structured ingredients
+// scale into shopping items (matching by normalized name + unit), shopping
+// items can be moved into inventory as a PURCHASE transaction, and inventory
+// quantities only change through explicit transactions. See docs.
+
+model Recipe {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+
+  title        String
+  description  String?
+  instructions String?
+  // Number of servings the ingredient quantities are written for; used as
+  // the scaling base when adding a recipe to a shopping list.
+  servings     Int?
+  prepMinutes  Int?    @map("prep_minutes")
+  cookMinutes  Int?    @map("cook_minutes")
+  category     String?
+  cuisine      String?
+  isFavourite  Boolean @default(false) @map("is_favourite")
+  notes        String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household     Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy     User               @relation("RecipeCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  ingredients   RecipeIngredient[]
+  mealEntries   MealPlanEntry[]
+  shoppingItems ShoppingListItem[]
+
+  @@index([householdId, updatedAt(sort: Desc)])
+  @@index([householdId, isFavourite])
+  @@map("recipes")
+}
+
+// Structured ingredient lines (never an uncontrolled text blob). `normalized`
+// is the lowercased, whitespace-collapsed name used for matching when
+// generating shopping items and inventory purchases.
+model RecipeIngredient {
+  id         String   @id @default(cuid())
+  recipeId   String   @map("recipe_id")
+  name       String
+  normalized String
+  quantity   Decimal? @db.Decimal(12, 3)
+  unit       String?
+  optional   Boolean  @default(false)
+  notes      String?
+  sortOrder  Int      @default(0) @map("sort_order")
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId, sortOrder])
+  @@index([normalized])
+  @@map("recipe_ingredients")
+}
+
+// One planned meal on a calendar date. The recipe is referenced, never
+// copied; `title` holds a free-text label for meals without a recipe and is
+// also used to snapshot the recipe name if the recipe is deleted.
+model MealPlanEntry {
+  id          String   @id @default(cuid())
+  householdId String   @map("household_id")
+  createdById String   @map("created_by_id")
+  recipeId    String?  @map("recipe_id")
+  date        DateTime @db.Date
+  mealType    MealType @map("meal_type")
+  title       String?
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("MealEntryCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  recipe    Recipe?   @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, date])
+  @@index([householdId, mealType])
+  @@index([recipeId])
+  @@map("meal_plan_entries")
+}
+
+model ShoppingList {
+  id          String    @id @default(cuid())
+  householdId String    @map("household_id")
+  createdById String    @map("created_by_id")
+  name        String
+  notes       String?
+  archivedAt  DateTime? @map("archived_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User               @relation("ShoppingListCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  items     ShoppingListItem[]
+
+  @@index([householdId, archivedAt])
+  @@map("shopping_lists")
+}
+
+model ShoppingListItem {
+  id          String       @id @default(cuid())
+  listId      String       @map("list_id")
+  // Traceability only: which recipe generated/merged this line (SET NULL so
+  // deleting a recipe never removes shopping history).
+  recipeId    String?      @map("recipe_id")
+  name        String
+  normalized  String
+  quantity    Decimal?     @db.Decimal(12, 3)
+  unit        String?
+  category    ItemCategory @default(OTHER)
+  notes       String?
+  purchasedAt DateTime?    @map("purchased_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  list   ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  recipe Recipe?      @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+
+  @@index([listId, purchasedAt])
+  @@index([listId, category])
+  @@index([normalized])
+  @@map("shopping_list_items")
+}
+
+model InventoryItem {
+  id              String            @id @default(cuid())
+  householdId     String            @map("household_id")
+  createdById     String            @map("created_by_id")
+  name            String
+  normalized      String
+  // Quantities change only through InventoryTransaction rows (never a raw
+  // PATCH) so history stays complete. minimumQuantity 0 = no threshold.
+  quantity        Decimal           @default(0) @db.Decimal(12, 3)
+  unit            String?
+  category        ItemCategory      @default(OTHER)
+  location        InventoryLocation @default(PANTRY)
+  expiresAt       DateTime?         @map("expires_at") @db.Date
+  minimumQuantity Decimal           @default(0) @map("minimum_quantity") @db.Decimal(12, 3)
+  notes           String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household    Household              @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy    User                   @relation("InventoryItemCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  transactions InventoryTransaction[]
+
+  @@index([householdId, normalized])
+  @@index([householdId, expiresAt])
+  @@index([householdId, category])
+  @@index([householdId, location])
+  @@map("inventory_items")
+}
+
+// Ledger: every quantity change is recorded with the resulting balance.
+model InventoryTransaction {
+  id            String                   @id @default(cuid())
+  householdId   String                   @map("household_id")
+  itemId        String                   @map("item_id")
+  createdById   String                   @map("created_by_id")
+  type          InventoryTransactionType
+  quantityDelta Decimal                  @map("quantity_delta") @db.Decimal(12, 3)
+  quantityAfter Decimal                  @map("quantity_after") @db.Decimal(12, 3)
+  note          String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  household Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  item      InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  createdBy User          @relation("InventoryTransactionCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([itemId, createdAt(sort: Desc)])
+  @@index([householdId, createdAt(sort: Desc)])
+  @@map("inventory_transactions")
 }
