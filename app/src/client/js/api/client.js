@@ -86,3 +86,34 @@ export const api = {
   patch: (path, body) => apiRequest(path, { method: 'PATCH', body }),
   del: (path) => apiRequest(path, { method: 'DELETE' }),
 };
+
+// Raw binary upload (diary attachments): the file itself is the request
+// body and the display name travels percent-encoded in X-Filename.
+export async function apiUpload(path, file, { retryCsrf = true } = {}) {
+  const headers = { Accept: 'application/json' };
+  const token = await ensureCsrfToken();
+  if (token) {
+    headers['X-CSRF-Token'] = token;
+  }
+  headers['X-Filename'] = encodeURIComponent(file.name || 'image');
+  headers['Content-Type'] = file.type || 'application/octet-stream';
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers,
+    credentials: 'same-origin',
+    body: file,
+  });
+  const parsed = await response.json().catch(() => null);
+  if (!response.ok || parsed?.success !== true) {
+    if (retryCsrf && isCsrfFailure(response.status, parsed)) {
+      csrfToken = null;
+      return apiUpload(path, file, { retryCsrf: false });
+    }
+    throw new ApiError(parsed?.error?.message ?? `Upload failed with status ${response.status}.`, {
+      code: parsed?.error?.code,
+      status: response.status,
+      details: parsed?.error?.details,
+    });
+  }
+  return parsed.data;
+}

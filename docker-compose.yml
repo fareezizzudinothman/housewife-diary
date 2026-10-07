@@ -12,6 +12,8 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in the root .env}
     ports:
       - "${APP_PORT:-3200}:3000"
+    volumes:
+      - uploads_data:/usr/src/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,3 +45,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:

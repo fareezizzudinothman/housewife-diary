@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Write a diary entry in Housewife Diary.">
+  <title>Write entry — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Write entry">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <a class="back-link" href="/pages/diary.html"><span data-icon="chevron-left" data-icon-size="sm"></span> Back to diary</a>
+            <h1 data-form-title>New entry</h1>
+            <p data-form-subtitle>Private to you. Plain text keeps your memories safe.</p>
+          </div>
+        </div>
+
+        <div data-form-notice></div>
+
+        <section class="card">
+          <form id="diary-form" class="form" novalidate>
+            <div class="field">
+              <label for="entry-title">Title</label>
+              <input type="text" id="entry-title" name="title" maxlength="200" required
+                     placeholder="What is this entry about?" autocomplete="off">
+            </div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="entry-date">Date</label>
+                <input type="date" id="entry-date" name="entryDate" min="1900-01-01" max="2100-12-31" required>
+              </div>
+              <div class="field">
+                <span class="field-label" id="time-of-day-label">Time of day</span>
+                <div class="segmented" data-segmented="timeOfDay" role="group" aria-labelledby="time-of-day-label">
+                  <button type="button" class="segmented__option" data-value="MORNING" aria-pressed="false">Morning</button>
+                  <button type="button" class="segmented__option" data-value="AFTERNOON" aria-pressed="false">Afternoon</button>
+                  <button type="button" class="segmented__option" data-value="EVENING" aria-pressed="true">Evening</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <span class="field-label" id="mood-label">Mood</span>
+              <div class="mood-picker" data-mood-picker role="group" aria-labelledby="mood-label">
+                <button type="button" class="mood-chip mood-chip--option" data-mood="" aria-pressed="true">No mood</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="entry-tags">Tags</label>
+              <input type="text" id="entry-tags" name="tags" maxlength="500" autocomplete="off"
+                     placeholder="family, home, gratitude">
+              <p class="field-hint">Separate tags with commas — up to 10, 40 characters each.</p>
+            </div>
+
+            <div class="field">
+              <label for="entry-content">Entry</label>
+              <textarea id="entry-content" name="content" rows="12" maxlength="20000" required
+                        placeholder="Write the day in your own words…"></textarea>
+              <p class="field-hint" data-counter>0 / 20000 characters</p>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn--primary">Save entry</button>
+              <a class="btn btn--ghost" href="/pages/diary.html">Cancel</a>
+            </div>
+            <p id="diary-form-status" class="form-status" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/diary-form.js"></script>
+</body>
+</html>

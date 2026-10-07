@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Housewife Diary dashboard.">
+  <title>Dashboard — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Dashboard">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Overview</p>
+            <h1 data-greeting>Dashboard</h1>
+            <p data-subtitle>Loading your home at a glance…</p>
+          </div>
+        </div>
+
+        <div data-dashboard-notice></div>
+
+        <section class="stat-grid" data-stats aria-label="Overview"></section>
+
+        <div class="dash-grid">
+          <section class="card">
+            <div class="card__head">
+              <div class="card__head-text">
+                <h2>Diary</h2>
+                <p data-diary-subtitle>Your latest entries</p>
+              </div>
+              <a class="btn btn--ghost btn--small" href="/pages/diary.html">Open diary</a>
+            </div>
+            <div data-diary-panel aria-live="polite"></div>
+          </section>
+
+          <section class="card">
+            <div class="card__head">
+              <div class="card__head-text">
+                <h2>Household</h2>
+                <p>Who you are sharing this home with</p>
+              </div>
+              <a class="btn btn--ghost btn--small" href="/pages/household.html">Manage</a>
+            </div>
+            <dl data-household-facts></dl>
+          </section>
+
+          <section class="card">
+            <div class="card__head">
+              <div class="card__head-text">
+                <h2>Coming soon</h2>
+                <p>Modules that are on the way</p>
+              </div>
+            </div>
+            <div class="module-grid" data-modules></div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/dashboard.js"></script>
+</body>
+</html>

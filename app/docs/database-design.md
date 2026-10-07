@@ -1,6 +1,6 @@
 # Database design
 
-PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. Migrations so far: `20261007041913_auth_core` (Phase 2, identity tables) and `20261007052226_theme_preferences` (Phase 3, theme tables).
+PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. Migrations so far: `20261007041913_auth_core` (Phase 2, identity tables), `20261007052226_theme_preferences` (Phase 3, theme tables) and `20261007071119_diary_core` (Phase 4, diary tables + mood seeds).
 
 ## Principles
 
@@ -44,11 +44,30 @@ user_preferences         id, user_id (FK, unique), theme_id (FK themes, SET NULL
 
 `themes` is global catalog data seeded with nine presets; `user_preferences` is per-user and written lazily (a row is created on the first appearance change). `theme_overrides` holds only the validated allowlisted variables (see [theme-system.md](theme-system.md)); deleting a preset nulls the reference rather than deleting user rows.
 
+## Diary model (Phase 4 — implemented)
+
+```text
+moods                   id (text = slug), name, sort_order, timestamps
+                         — seeded catalog (10): happy, calm, loved, excited, neutral,
+                           tired, sad, stressed, angry, anxious
+diary_entries           id, household_id (FK), user_id (FK), entry_date (YYYY-MM-DD),
+                         time_of_day (MORNING|AFTERNOON|EVENING), title, content,
+                         mood_id (FK moods, SET NULL), created_at, updated_at
+                         — index (household_id, user_id, entry_date DESC)
+diary_tags              id, household_id (FK), user_id (FK), name (lowercase),
+                         created_at — unique (household_id, user_id, name)
+diary_entry_tags        diary_entry_id (FK), tag_id (FK) — composite PK, cascade
+diary_attachments       id, diary_entry_id (FK, cascade), original_name, stored_name
+                         (random hex + validated extension), mime_type, size_bytes,
+                         created_at — max 5 rows per entry enforced in the service
+```
+
+Entries are personal to an author **within** a household: every query filters `{householdId, userId}`, so household members cannot read each other's diaries (404), and an entry belongs forever to the household it was written in. `mood_id` is `SET NULL` so deleting a catalog mood never deletes entries. Tags are per-user rows joined many-to-many; names are normalized to lowercase and deduplicated. Attachment bytes live under `app/uploads/diary/` (a Docker volume, gitignored) — the database stores metadata only, `stored_name` is server-generated and never exposed through the API. Moods are seeded by the migration (ten rows, `sort_order` 1–10).
+
 ## Planned entity map by module
 
 | Module | Tables | Highlights |
 | --- | --- | --- |
-| Diary (P4) | `diary_entries`, `moods`, `diary_tags`, `diary_attachments` | entries scoped per user-in-household, tag many-to-many, attachments reference `documents` |
 | Tasks (P5) | `tasks`, `task_categories`, `task_templates`, `task_recurrences` | priority/due/assignee; recurrence rules expand into dated tasks |
 | Calendar (P5) | `calendar_events` | unified view over tasks, bills, birthdays via queries, own events stored here |
 | Meals (P6) | `meals`, `recipes`, `recipe_ingredients`, `ingredients` | meal slots (breakfast/lunch/dinner/snack) by date; recipes favoriteable |

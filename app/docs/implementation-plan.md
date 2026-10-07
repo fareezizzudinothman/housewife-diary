@@ -10,7 +10,7 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 | 1 | Foundation: Node.js, PostgreSQL, Prisma, Docker, Git, documentation, health check | **Complete** |
 | 2 | Authentication and household management | **Complete** |
 | 3 | UI foundation and theme engine | **Complete** |
-| 4 | Dashboard and diary | Planned |
+| 4 | Dashboard and diary | **Complete** |
 | 5 | Tasks and calendar | Planned |
 | 6 | Meals, recipes, shopping, inventory | Planned |
 | 7 | Finance, expenses, bills, budgets, reports | Planned |
@@ -84,9 +84,30 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 - `docker compose up -d --build` healthy; smoke-tested pages, assets and `/api/themes` through the container.
 - Browser-verified: all pages render without JS/network errors, theme/override persistence across reloads, responsive layouts with no horizontal overflow, keyboard focus visible.
 
+## Phase 4 — Dashboard and diary (delivered)
+
+**Scope:**
+
+- Third Prisma migration: `moods`, `diary_entries`, `diary_tags`, `diary_entry_tags`, `diary_attachments` (+ `time_of_day` enum), seeded with ten moods.
+- Dashboard aggregation endpoint (`GET /api/dashboard`): user, household and diary summary; future modules return an explicit `not_available` status — no mocked data anywhere.
+- Diary module (full CRUD): timeline listing grouped by date and day-part, search, date-range/mood/tag filters, pagination, personal scope (`householdId + userId`) with 404 isolation.
+- Attachments: raw-binary upload (≤5 MB, ≤5 per entry), magic-byte type detection, private authenticated streaming, delete cascades files.
+- Client: `dashboard`, `diary` (timeline + filters), `diary-entry` (detail + attachments), `diary-form` (create/edit) pages; ApiClient gained `upload()`; sprite additions; dashboard mock preview deleted.
+- Tests: 26 new server tests (90 total) covering CRUD/validation, filters, isolation boundaries, attachment lifecycle and the dashboard contract.
+
+**Out of scope:** tasks, meals, recipes, shopping, inventory, finance, calendar, family, AI (Phases 5–10).
+
+**Design:** [diary.md](diary.md), [architecture.md](architecture.md), [database-design.md](database-design.md), [api-design.md](api-design.md).
+
+### Completion criteria (met)
+
+- `npm test` passes (90 tests) including diary CRUD, isolation and attachment suites.
+- Migration `diary_core` applied; `prisma migrate status` reports an up-to-date schema.
+- `docker compose up -d --build` healthy; diary upload volume persists across container restart.
+- Browser-verified: full diary flow (create → detail → upload → filter → edit → delete), dashboard with real data, no JS/network errors, no horizontal overflow at 1360/1024/820/768/480/375 px.
+
 ## Later phases (summary scope)
 
-- **Phase 4:** dashboard aggregation endpoint + diary, mood, daily activities.
 - **Phase 5:** tasks, categories, recurring tasks, calendar events.
 - **Phase 6:** meal planner, recipes, ingredients, shopping lists, pantry/inventory with transactions and low-stock alerts.
 - **Phase 7:** expenses, income, categories, budgets, bills, receipts, monthly reports.
