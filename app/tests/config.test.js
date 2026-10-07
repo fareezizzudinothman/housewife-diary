@@ -32,3 +32,43 @@ test('loadConfig rejects an invalid PORT', () => {
   assert.throws(() => loadConfig({ DATABASE_URL: validDatabaseUrl, PORT: 'not-a-port' }), /PORT/);
   assert.throws(() => loadConfig({ DATABASE_URL: validDatabaseUrl, PORT: '70000' }), /PORT/);
 });
+
+test('loadConfig requires SESSION_SECRET in production', () => {
+  assert.throws(
+    () => loadConfig({ NODE_ENV: 'production', DATABASE_URL: validDatabaseUrl }),
+    /SESSION_SECRET/,
+  );
+  const config = loadConfig({
+    NODE_ENV: 'production',
+    DATABASE_URL: validDatabaseUrl,
+    SESSION_SECRET: 'prod-secret',
+  });
+  assert.equal(config.sessionSecret, 'prod-secret');
+});
+
+test('loadConfig parses BCRYPT_COST with production minimum', () => {
+  const defaults = loadConfig({ DATABASE_URL: validDatabaseUrl });
+  assert.equal(defaults.bcryptCost, 12);
+
+  const cheaper = loadConfig({ DATABASE_URL: validDatabaseUrl, BCRYPT_COST: '8' });
+  assert.equal(cheaper.bcryptCost, 8);
+
+  assert.throws(
+    () => loadConfig({ DATABASE_URL: validDatabaseUrl, BCRYPT_COST: '3' }),
+    /BCRYPT_COST/,
+  );
+  assert.throws(
+    () => loadConfig({ DATABASE_URL: validDatabaseUrl, BCRYPT_COST: '16' }),
+    /BCRYPT_COST/,
+  );
+  assert.throws(
+    () =>
+      loadConfig({
+        NODE_ENV: 'production',
+        DATABASE_URL: validDatabaseUrl,
+        SESSION_SECRET: 'prod-secret',
+        BCRYPT_COST: '8',
+      }),
+    /at least 10/,
+  );
+});

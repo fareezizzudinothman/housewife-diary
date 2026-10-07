@@ -20,6 +20,20 @@ function parsePort(value) {
   return port;
 }
 
+function parseBcryptCost(value, nodeEnv) {
+  if (value === undefined || value === '') {
+    return 12;
+  }
+  const cost = Number(value);
+  if (!Number.isInteger(cost) || cost < 4 || cost > 15) {
+    throw new Error('BCRYPT_COST must be an integer between 4 and 15.');
+  }
+  if (nodeEnv === 'production' && cost < 10) {
+    throw new Error('BCRYPT_COST must be at least 10 in production.');
+  }
+  return cost;
+}
+
 export function loadConfig(env = process.env) {
   const databaseUrl = env.DATABASE_URL?.trim();
   if (!databaseUrl) {
@@ -27,11 +41,19 @@ export function loadConfig(env = process.env) {
       'DATABASE_URL is required. Copy app/.env.example to app/.env and provide a PostgreSQL connection URL.',
     );
   }
+  const nodeEnv = env.NODE_ENV?.trim() || 'development';
+  const sessionSecret = env.SESSION_SECRET?.trim() || null;
+  if (nodeEnv === 'production' && !sessionSecret) {
+    throw new Error(
+      'SESSION_SECRET is required in production. Generate one with: openssl rand -base64 48',
+    );
+  }
   return {
-    env: env.NODE_ENV?.trim() || 'development',
+    env: nodeEnv,
     port: parsePort(env.PORT),
     databaseUrl,
-    sessionSecret: env.SESSION_SECRET?.trim() || null,
+    sessionSecret,
+    bcryptCost: parseBcryptCost(env.BCRYPT_COST, nodeEnv),
   };
 }
 

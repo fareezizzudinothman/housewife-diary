@@ -35,7 +35,7 @@ Each layer has a single responsibility and a single direction of dependency:
 | Services | `src/server/services` | Business logic, authorization decisions, transactions |
 | Repositories | `src/server/repositories` | The only layer that touches Prisma models (introduced with Phase 2) |
 | Validators | `src/server/validators` | Request input validation schemas/rules per module |
-| Middleware | `src/server/middleware` | Cross-cutting: error handling now; authentication, authorization, rate limiting from Phase 2 |
+| Middleware | `src/server/middleware` | Cross-cutting: error handling, cookies, CSRF, authentication, authorization, rate limiting |
 | Config | `src/server/config` | Environment loading and validation (fail fast at startup) |
 | Shared | `src/shared` | Contracts shared across server and client (API error codes, envelope types) |
 

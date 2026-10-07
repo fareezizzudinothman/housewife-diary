@@ -2,8 +2,8 @@
 
 A warm, modern household management web application — a personal digital household companion for diary, tasks, meals, shopping, inventory, finances, family and home.
 
-> **Status:** Phase 0–1 (architecture specification + project foundation) complete.
-> The API server, PostgreSQL and Prisma are connected and verified. Business modules arrive phase by phase — see [docs/implementation-plan.md](docs/implementation-plan.md).
+> **Status:** Phase 0–2 (architecture + foundation + authentication/household management) complete.
+> The API server, PostgreSQL and Prisma are connected and verified; users can register, sign in and manage households. Business modules arrive phase by phase — see [docs/implementation-plan.md](docs/implementation-plan.md).
 
 ## Planned modules
 
@@ -70,6 +70,7 @@ app/
    POSTGRES_USER=housewife
    POSTGRES_PASSWORD=your_local_password      # change this
    POSTGRES_DB=housewife_diary
+   SESSION_SECRET=$(openssl rand -base64 48)  # required; keep it stable across restarts
    # Optional overrides:
    # APP_PORT=3200        # host port for the web app (default 3200)
    # POSTGRES_PORT=5434   # host port for PostgreSQL (default 5434)
@@ -161,6 +162,7 @@ docker compose down
 | `POSTGRES_USER` | yes | PostgreSQL superuser name |
 | `POSTGRES_PASSWORD` | yes | PostgreSQL password (local secret, never commit) |
 | `POSTGRES_DB` | yes | Database name |
+| `SESSION_SECRET` | yes | Session/CSRF signing secret (Compose fails fast without it) |
 | `APP_PORT` | no | Host port for the app (default `3200`) |
 | `POSTGRES_PORT` | no | Host port for PostgreSQL (default `5434`) |
 | `NODE_ENV` | no | App container mode (default `production`) |
@@ -172,7 +174,8 @@ docker compose down
 | `DATABASE_URL` | yes | PostgreSQL connection URL (overridden by Compose in Docker) |
 | `PORT` | no | Local server port (default `3000`; example uses `3200`) |
 | `NODE_ENV` | no | Runtime mode (default `development`) |
-| `SESSION_SECRET` | Phase 2 | Session signing secret (unused until authentication lands) |
+| `SESSION_SECRET` | prod: yes | Session/CSRF signing secret; required when `NODE_ENV=production` |
+| `BCRYPT_COST` | no | bcrypt cost (default `12`; minimum `10` in production) |
 
 ## Documentation
 
@@ -180,7 +183,7 @@ docker compose down
 - [Implementation plan](docs/implementation-plan.md)
 - [Database design](docs/database-design.md)
 - [API design](docs/api-design.md)
-- [Authentication (Phase 2 plan)](docs/authentication.md)
+- [Authentication](docs/authentication.md)
 - [Theme system (Phase 3 plan)](docs/theme-system.md)
 - [Development workflow](docs/development-workflow.md)
 - [AI architecture (Phase 10 plan)](docs/ai-architecture.md)
@@ -191,7 +194,7 @@ docker compose down
 | --- | --- | --- |
 | 0 | Architecture and project specification | Complete |
 | 1 | Foundation: Node.js, PostgreSQL, Prisma, Docker, Git, docs, health check | Complete |
-| 2 | Authentication and household management | Planned |
+| 2 | Authentication and household management | Complete |
 | 3 | UI foundation and theme engine | Planned |
 | 4 | Dashboard and diary | Planned |
 | 5 | Tasks and calendar | Planned |
@@ -206,4 +209,4 @@ docker compose down
 - No secrets are committed: `.env` files are gitignored, and `.env.example` files contain placeholders only.
 - The API sets secure HTTP headers via `helmet` and validates its environment on startup.
 - The app container runs as the unprivileged `node` user.
-- Authentication (password hashing, sessions, rate limiting) is specified in [docs/authentication.md](docs/authentication.md) and implemented in Phase 2.
+- Authentication (password hashing, sessions, rate limiting, CSRF, household isolation) is implemented per [docs/authentication.md](docs/authentication.md) and covered by the test suite.

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Set up your Housewife Diary household.">
+  <title>Household — Housewife Diary</title>
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body>
+  <main class="page">
+    <header class="app-header">
+      <p class="app-brand"><a href="/">Housewife Diary</a></p>
+      <div class="header-row">
+        <h1>Household setup</h1>
+        <div class="header-actions">
+          <a href="/pages/profile.html" class="btn btn--secondary">Profile</a>
+          <button type="button" id="logout-button" class="btn btn--secondary">Sign out</button>
+        </div>
+      </div>
+      <p class="app-tagline">Create a household or manage the members of an existing one.</p>
+    </header>
+
+    <section class="card">
+      <h2>Create a household</h2>
+      <form id="create-household-form" class="form" novalidate>
+        <div class="field">
+          <label for="household-name">Household name</label>
+          <input type="text" id="household-name" name="name" maxlength="80" placeholder="Our home" required>
+        </div>
+        <button type="submit" class="btn btn--primary">Create household</button>
+        <p id="create-status" class="form-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Your households</h2>
+      <div id="household-list" class="item-list"></div>
+    </section>
+
+    <section class="card" id="members-section" hidden>
+      <div class="header-row">
+        <h2 id="members-heading">Members</h2>
+        <button type="button" id="leave-button" class="btn btn--danger btn--small">Leave household</button>
+      </div>
+      <div id="members-list" class="item-list"></div>
+      <p id="members-status" class="form-status" role="status" aria-live="polite"></p>
+
+      <form id="add-member-form" class="form form--inline" novalidate>
+        <div class="field">
+          <label for="member-email">Invite by email</label>
+          <input type="email" id="member-email" name="email" autocomplete="off" placeholder="member@example.com" required>
+        </div>
+        <div class="field">
+          <label for="member-role">Role</label>
+          <select id="member-role" name="role">
+            <option value="MEMBER">member</option>
+            <option value="VIEWER">viewer</option>
+            <option value="ADMIN">admin (owner only)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn--primary btn--small">Add member</button>
+        <p id="add-member-status" class="form-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+  <script type="module" src="/js/pages/household.js"></script>
+</body>
+</html>

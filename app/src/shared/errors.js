@@ -10,11 +10,12 @@ export const ErrorCodes = Object.freeze({
 });
 
 export class AppError extends Error {
-  constructor(message, { code = ErrorCodes.INTERNAL_ERROR, status = 500, details = [], cause } = {}) {
+  constructor(message, { code = ErrorCodes.INTERNAL_ERROR, status = 500, details = [], headers = {}, cause } = {}) {
     super(message, cause === undefined ? undefined : { cause });
     this.name = 'AppError';
     this.code = code;
     this.status = status;
     this.details = details;
+    this.headers = headers;
   }
 }

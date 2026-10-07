@@ -1,6 +1,6 @@
 # Database design
 
-PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. The foundation deliberately ships an empty schema: the first migration (Phase 2) introduces `users`.
+PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. The first migration (`20261007041913_auth_core`, Phase 2) introduced the identity tables below.
 
 ## Principles
 
@@ -13,20 +13,22 @@ PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by p
 7. **No premature complexity:** soft deletes only where a module needs history (e.g. receipts); enums for closed sets (roles, priorities, recurrence units); `Decimal` for money.
 8. **Normalization:** repeating concepts become their own tables (categories, stores, ingredients) so price tracking and reporting stay meaningful.
 
-## Core identity model (Phase 2)
+## Core identity model (Phase 2 — implemented)
 
 ```text
-users                id, email (unique, citext-style lowercase), password_hash,
-                     name, timezone, email_verified_at, active_household_id,
-                     created_at, updated_at
-sessions             id, user_id (FK), token_hash (unique), expires_at,
-                     remember_me, user_agent, ip, created_at
-households           id, name, owner_user_id (FK users), created_at, updated_at
-household_members    id, household_id (FK), user_id (FK), role (OWNER|ADMIN|MEMBER|VIEWER),
-                     joined_at — unique (household_id, user_id)
+users                    id, email (unique, citext-style lowercase), password_hash,
+                         name, timezone, email_verified_at, active_household_id,
+                         created_at, updated_at
+sessions                 id, user_id (FK), token_hash (unique), expires_at,
+                         remember_me, user_agent, ip, created_at
+households               id, name, owner_user_id (FK users), created_at, updated_at
+household_members        id, household_id (FK), user_id (FK), role (OWNER|ADMIN|MEMBER|VIEWER),
+                         joined_at — unique (household_id, user_id)
+password_reset_tokens    id, user_id (FK), token_hash, expires_at, used_at, timestamps
+email_verification_tokens id, user_id (FK), token_hash, expires_at, used_at, timestamps
 ```
 
-A user may belong to several households; `users.active_household_id` selects the working context. The sessions table is server-side state, enabling revocable, expiring sessions (see [authentication.md](authentication.md)).
+A user may belong to several households; `users.active_household_id` selects the working context. The sessions table is server-side state, enabling revocable, expiring sessions (see [authentication.md](authentication.md)). Reset/verification tokens are stored hashed with a TTL and are single-use (`used_at`).
 
 ## Planned entity map by module
 
