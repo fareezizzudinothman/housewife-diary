@@ -7,6 +7,10 @@
   gap: 1.25rem;
 }
 
+.page--narrow {
+  max-width: 30rem;
+}
+
 .app-header {
   display: flex;
   flex-direction: column;

@@ -22,6 +22,9 @@ export function errorHandler(err, _req, res, _next) {
     if (err.cause) {
       console.error(err.cause);
     }
+    for (const [name, value] of Object.entries(err.headers ?? {})) {
+      res.setHeader(name, value);
+    }
     return sendError(res, { code: err.code, message: err.message, details: err.details, status: err.status });
   }
 

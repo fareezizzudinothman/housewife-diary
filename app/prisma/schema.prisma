@@ -1,5 +1,7 @@
 // Business models are introduced phase by phase — see docs/database-design.md.
-// Phase 2 (authentication) adds the first models: users and sessions.
+// Phase 2 (authentication) adds the identity model: users, sessions,
+// households, household_members, password_reset_tokens and
+// email_verification_tokens.
 
 generator client {
   provider = "prisma-client-js"
@@ -8,4 +10,120 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Roles govern capabilities inside a household (see docs/authentication.md).
+enum HouseholdRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+
+  @@map("household_role")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  // citext-style uniqueness: emails are normalized to lowercase in the
+  // application layer before every write and lookup.
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  name              String
+  timezone          String    @default("UTC")
+  emailVerifiedAt   DateTime? @map("email_verified_at")
+  activeHouseholdId String?   @map("active_household_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  activeHousehold         Household?               @relation("UserActiveHousehold", fields: [activeHouseholdId], references: [id], onDelete: SetNull)
+  ownedHouseholds         Household[]              @relation("HouseholdOwner")
+  sessions                Session[]
+  memberships             HouseholdMember[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+
+  @@map("users")
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  tokenHash  String   @unique @map("token_hash")
+  expiresAt  DateTime @map("expires_at")
+  rememberMe Boolean  @default(false) @map("remember_me")
+  userAgent  String?  @map("user_agent")
+  ip         String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Household {
+  id          String @id @default(cuid())
+  name        String
+  ownerUserId String @map("owner_user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  owner         User              @relation("HouseholdOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  members       HouseholdMember[]
+  activeMembers User[]            @relation("UserActiveHousehold")
+
+  @@index([ownerUserId])
+  @@map("households")
+}
+
+model HouseholdMember {
+  id          String        @id @default(cuid())
+  householdId String        @map("household_id")
+  userId      String        @map("user_id")
+  role        HouseholdRole @default(MEMBER)
+  joinedAt    DateTime      @default(now()) @map("joined_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+  @@index([userId])
+  @@map("household_members")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
 }
