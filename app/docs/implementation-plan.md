@@ -11,7 +11,7 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 | 2 | Authentication and household management | **Complete** |
 | 3 | UI foundation and theme engine | **Complete** |
 | 4 | Dashboard and diary | **Complete** |
-| 5 | Tasks and calendar | Planned |
+| 5 | Tasks and calendar | **Complete** |
 | 6 | Meals, recipes, shopping, inventory | Planned |
 | 7 | Finance, expenses, bills, budgets, reports | Planned |
 | 8 | Family, home management, home inventory, documents | Planned |
@@ -106,9 +106,32 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 - `docker compose up -d --build` healthy; diary upload volume persists across container restart.
 - Browser-verified: full diary flow (create → detail → upload → filter → edit → delete), dashboard with real data, no JS/network errors, no horizontal overflow at 1360/1024/820/768/480/375 px.
 
+## Phase 5 — Tasks and calendar (delivered)
+
+**Scope:**
+
+- Fourth Prisma migration `tasks_core`: `task_categories`, `tasks` (with the bounded recurrence materialization) and `calendar_events` (+ `task_status`, `task_priority`, `calendar_category`, `calendar_source_type` enums).
+- Tasks module (full CRUD): household-wide categories, assignment, priority, views (`today`/`upcoming`/`overdue`/`completed`/`all`), filters, sorting, pagination; completion endpoint; series-aware deletion.
+- Recurrence foundation shared by both modules (`validators/recurrence`, `utils/recurrence`, `utils/time`): structured rules, rolling 90-day materialization for tasks, in-memory expansion for calendar events, per-series/pass caps.
+- Calendar module: native event CRUD (all-day/timed, category, location, reminder settings, recurrence), ranged queries with timezone-aware day bounds, and **task ↔ calendar integration** — due tasks surface as read-only `sourceType: TASK` items.
+- Dashboard: `tasks` and `calendar` become real sections (`openCount`/`dueTodayCount`/`recent`, `upcomingCount`/`next`), leaving only the P6–P7 modules as `not_available`.
+- Client: `tasks` list + form pages, `calendar` month view + event form page, Tasks/Calendar navigation and sprite icons, dashboard module links and stat tile.
+- Tests: 25 new server tests (115 total) covering CRUD/validation, views/filters/pagination, recurrence windows, isolation, categories, ranged calendar queries, timezone boundaries and task integration.
+
+**Out of scope:** task templates, notification/reminder delivery, external calendar sync, meals, recipes, shopping, inventory, finance, family, AI (Phases 6–10).
+
+**Design:** [tasks.md](tasks.md), [calendar.md](calendar.md), [api-design.md](api-design.md), [database-design.md](database-design.md).
+
+### Completion criteria (met)
+
+- `npm test` passes (115 tests) including the tasks and calendar suites plus the updated dashboard contract.
+- Migration `tasks_core` applied; `prisma migrate status` reports an up-to-date schema.
+- `docker compose up -d --build` healthy; tasks/calendar/dashboard smoke-tested through the container; `/api/health` returns `success: true`.
+- Browser-verified with Playwright: task list + completion, task creation, calendar month view with derived task items, event creation, dashboard module links, no console/API errors, no horizontal overflow at 1360/820/375 px.
+
 ## Later phases (summary scope)
 
-- **Phase 5:** tasks, categories, recurring tasks, calendar events.
+- **Phase 5:** tasks, categories, recurring tasks, calendar events. *(delivered above)*
 - **Phase 6:** meal planner, recipes, ingredients, shopping lists, pantry/inventory with transactions and low-stock alerts.
 - **Phase 7:** expenses, income, categories, budgets, bills, receipts, monthly reports.
 - **Phase 8:** family members/events, cleaning & house management, home assets/warranties, documents, notes, ideas.

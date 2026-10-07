@@ -2,12 +2,12 @@
 
 A warm, modern household management web application — a personal digital household companion for diary, tasks, meals, shopping, inventory, finances, family and home.
 
-> **Status:** Phase 0–4 (architecture + foundation + authentication/household management + UI foundation/theme engine + dashboard/diary) complete.
-> The API server, PostgreSQL and Prisma are connected and verified; users can register, sign in, manage households, customize the app's appearance (nine themes, light/dark/system modes), read their dashboard and write diary entries with photos. Remaining modules arrive phase by phase — see [docs/implementation-plan.md](docs/implementation-plan.md).
+> **Status:** Phase 0–5 (architecture + foundation + authentication/household management + UI foundation/theme engine + dashboard/diary + tasks/calendar) complete.
+> The API server, PostgreSQL and Prisma are connected and verified; users can register, sign in, manage households, customize the app's appearance (nine themes, light/dark/system modes), read their dashboard, write diary entries with photos, and plan tasks and calendar events together. Remaining modules arrive phase by phase — see [docs/implementation-plan.md](docs/implementation-plan.md).
 
 ## Modules
 
-**Delivered:** authentication and household management, appearance/themes, dashboard (real aggregation — no mock data), diary (timeline, search and filters, moods, tags, photo attachments).
+**Delivered:** authentication and household management, appearance/themes, dashboard (real aggregation — no mock data), diary (timeline, search and filters, moods, tags, photo attachments), tasks (categories, assignment, views, recurring tasks) and calendar (all-day/timed events, ranged month view, task-derived items).
 
 **Planned (phase by phase):**
 
@@ -189,6 +189,8 @@ docker compose down
 - [API design](docs/api-design.md)
 - [Authentication](docs/authentication.md)
 - [Diary module](docs/diary.md)
+- [Tasks module](docs/tasks.md)
+- [Calendar module](docs/calendar.md)
 - [Theme system and UI design system](docs/theme-system.md)
 - [Development workflow](docs/development-workflow.md)
 - [AI architecture (Phase 10 plan)](docs/ai-architecture.md)
@@ -202,7 +204,7 @@ docker compose down
 | 2 | Authentication and household management | Complete |
 | 3 | UI foundation and theme engine | Complete |
 | 4 | Dashboard and diary | Complete |
-| 5 | Tasks and calendar | Planned |
+| 5 | Tasks and calendar | Complete |
 | 6 | Meals, recipes, shopping, inventory | Planned |
 | 7 | Finance, bills, budgets, reports | Planned |
 | 8 | Family, home management, home inventory, documents | Planned |

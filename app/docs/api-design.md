@@ -132,7 +132,13 @@ Override validation, the allowlist and the response shapes are specified in [the
 | --- | --- | --- | --- |
 | GET | `/` | session + household | Aggregated overview; `403` when the user has no active household |
 
-Response `data`: `{ user, household, diary, tasks, calendar, meals, shopping, inventory, finance }`. `diary` is `status: 'available'` with `count` + `recent` (five content-free items) or `status: 'empty'`; the six future modules always return `status: 'not_available'`.
+Response `data`: `{ user, household, diary, tasks, calendar, meals, shopping, inventory, finance }`. Each implemented module reports `status: 'available'` with its own summary or `status: 'empty'`:
+
+- `diary`: `count` + `recent` (five content-free items).
+- `tasks`: `openCount`, `dueTodayCount` + `recent` (five open tasks).
+- `calendar`: `upcomingCount` (next 7 days) + `next` (up to three events inside that window).
+
+The four future modules (`meals`, `shopping`, `inventory`, `finance`) always return `status: 'not_available'`.
 
 ### `/api/diary`
 
@@ -152,12 +158,43 @@ All routes require a session and an active household (`requireHousehold`). Entri
 
 List items carry `excerpt` (whitespace-collapsed, 160 chars) and `attachmentCount`; `content` appears only on the detail endpoint. Ordering is `entryDate DESC, timeOfDay ASC, createdAt ASC`. Request bodies over 5 MB return `413 VALIDATION_ERROR`. Full design: [diary.md](diary.md).
 
+## Tasks and calendar endpoints (implemented — Phase 5)
+
+Both modules require a session and an active household (`requireHousehold`); every id resolves inside the active household only (`404` across households).
+
+### `/api/tasks`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/meta` | session + household | Category options + household members (for assignment) |
+| GET | `/categories` | session + household | Categories with task counts |
+| POST | `/categories` | session + household | `201 { category }`; duplicate name → `409`; rate limited (`tasks-write`) |
+| DELETE | `/categories/:id` | session + household | `200 { id, deleted: true }`; tasks keep existing with no category |
+| GET | `/` | session + household | List: `view`, `status`, `priority`, `category`, `assignee`, `search`, `sort`, `dir`, `page`, `limit` (≤50) → `{ items, page, limit, total, totalPages }` |
+| POST | `/` | session + household | `201 { task }`; a recurrence rule creates the series head and its first materialized window |
+| GET | `/:id` | session + household | Detail (same shape as list items) |
+| PATCH | `/:id` | session + household | Partial update; changing a head's due date/rule regenerates open occurrences |
+| POST | `/:id/complete` | session + household | Sets `COMPLETED` + `completedAt` |
+| DELETE | `/:id` | session + household | Deletes the task; deleting a series head cascades its occurrences. `?series=true` on an occurrence deletes the whole series |
+
+`view` ∈ `today \| upcoming \| overdue \| completed \| all` (default `all`); `sort` ∈ `due \| priority \| created`; `dir` ∈ `asc \| desc` (defaults: due → asc, otherwise desc). List items carry `recurrence`, `seriesId`, `repeating`, `category`, `assignee` and `createdBy`. Full design: [tasks.md](tasks.md).
+
+### `/api/calendar`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | Ranged read: `from`/`to` (`YYYY-MM-DD`, user-timezone days; missing bounds default to the current month, max 366 days) → `{ events, from, to }`, sorted by `startAt` |
+| POST | `/` | session + household | `201 { event }`; rate limited (`calendar-write`) |
+| GET | `/:id` | session + household | Native event detail (`404` for derived `task:` ids) |
+| PATCH | `/:id` | session + household | Partial update; all-day ↔ timed conversion keeps wall-clock days |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }` |
+
+Range responses mix native events (`sourceType: MANUAL`), recurring expansions (`recurring: true`), and read-only task-derived items (`sourceType: TASK`, id `task:<taskId>`). Full design: [calendar.md](calendar.md).
+
 ## Planned endpoint map (future phases)
 
 | Phase | Base path | Endpoints (representative) |
 | --- | --- | --- |
-| 5 | `/api/tasks` | tasks CRUD, complete, categories, templates, recurrences |
-| 5 | `/api/calendar` | events CRUD, ranged queries |
 | 6 | `/api/meals`, `/api/recipes` | meal plans, recipes with ingredients, favorites |
 | 6 | `/api/shopping`, `/api/inventory` | lists/items/purchase, items/transactions/low-stock |
 | 7 | `/api/expenses`, `/api/bills`, `/api/budgets` | CRUD, monthly report, spending analysis |

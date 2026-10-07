@@ -68,13 +68,15 @@ Oversized raw bodies surface as `413` via the central error handler (`entity.too
   "user": { "id", "name", "email", "emailVerified", "timezone" },
   "household": { "id", "name", "role", "memberCount" } | null,   // null → 403 on the endpoint
   "diary": { "status": "available" | "empty", "count", "recent": [ …5 items, no content… ] },
-  "tasks":     { "status": "not_available" },   // same shape for calendar, meals,
-  "calendar":  { "status": "not_available" },   //   shopping, inventory, finance
+  "tasks":     { "status", "openCount", "dueTodayCount", "recent": [ …5 open tasks… ] },
+  "calendar":  { "status", "upcomingCount", "next": [ …up to 3 events in the next 7 days… ] },
+  "meals":     { "status": "not_available" },   // same shape for shopping,
+  "shopping":  { "status": "not_available" },   //   inventory and finance
   …
 }
 ```
 
-`status` is an explicit product signal: `available` (data shown), `empty` (module works, no rows yet), `not_available` (module not built). The dashboard UI renders each case accordingly — the Phase 3 mock preview was deleted rather than kept as a fallback.
+`status` is an explicit product signal: `available` (data shown), `empty` (module works, no rows yet), `not_available` (module not built). The dashboard UI renders each case accordingly — the Phase 3 mock preview was deleted rather than kept as a fallback. Tasks and calendar became `available`/`empty` modules in Phase 5 ([tasks.md](tasks.md), [calendar.md](calendar.md)).
 
 ## Security summary
 

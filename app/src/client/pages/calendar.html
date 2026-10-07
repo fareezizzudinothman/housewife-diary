@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Household calendar in Housewife Diary.">
+  <title>Calendar — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Calendar">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Plan</p>
+            <h1 data-calendar-title>Calendar</h1>
+            <p data-calendar-subtitle>Events and due tasks for your household.</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="icon-btn" data-prev aria-label="Previous month">
+              <span data-icon="chevron-left"></span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--small" data-today>Today</button>
+            <button type="button" class="icon-btn" data-next aria-label="Next month">
+              <span data-icon="chevron-right"></span>
+            </button>
+            <a class="btn btn--primary" data-new-event href="/pages/event-form.html">New event</a>
+          </div>
+        </div>
+
+        <p id="calendar-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <section class="card card--flat" aria-label="Month view">
+          <div class="cal-weekdays" aria-hidden="true">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span>
+            <span>Fri</span><span>Sat</span><span>Sun</span>
+          </div>
+          <div class="cal-grid" data-grid></div>
+        </section>
+
+        <section class="card" data-day-panel>
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2 data-day-title>Selected day</h2>
+              <p data-day-subtitle></p>
+            </div>
+            <a class="btn btn--ghost btn--small" data-day-add href="/pages/event-form.html">Add event</a>
+          </div>
+          <div data-day-list aria-live="polite"></div>
+        </section>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/calendar.js"></script>
+</body>
+</html>

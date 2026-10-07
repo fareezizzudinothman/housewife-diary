@@ -12,12 +12,20 @@ const NAV_ITEMS = [
   { href: '/pages/dashboard.html', label: 'Dashboard', icon: 'grid' },
   { href: '/', label: 'Home', icon: 'home' },
   { href: '/pages/diary.html', label: 'Diary', icon: 'book' },
+  { href: '/pages/tasks.html', label: 'Tasks', icon: 'list-checks' },
+  { href: '/pages/calendar.html', label: 'Calendar', icon: 'calendar' },
   { href: '/pages/household.html', label: 'Household', icon: 'users' },
   { href: '/pages/appearance.html', label: 'Appearance', icon: 'palette' },
   { href: '/pages/profile.html', label: 'Profile', icon: 'user' },
 ];
 
-const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter((item) => item.href !== '/');
+// Phones get the four primary modules only; everything stays reachable
+// through the sidebar and the account menu.
+const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter((item) =>
+  ['/pages/dashboard.html', '/pages/diary.html', '/pages/tasks.html', '/pages/calendar.html', '/pages/household.html'].includes(
+    item.href,
+  ),
+);
 
 const MODE_ICONS = { SYSTEM: 'monitor', LIGHT: 'sun', DARK: 'moon' };
 const MODE_LABELS = {

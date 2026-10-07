@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Create or edit a calendar event in Housewife Diary.">
+  <title>Event — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="New event">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <a class="back-link" href="/pages/calendar.html">← Calendar</a>
+
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Plan</p>
+            <h1 data-form-title>New event</h1>
+            <p data-form-subtitle>Appointments, family plans and reminders.</p>
+          </div>
+        </div>
+
+        <div data-form-notice></div>
+
+        <form id="event-form" class="card form" novalidate>
+          <div class="field">
+            <label for="event-title">Title</label>
+            <input type="text" id="event-title" name="title" maxlength="200" required autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="event-description">Notes</label>
+            <textarea id="event-description" name="description" rows="3" maxlength="5000" placeholder="Optional details…"></textarea>
+          </div>
+
+          <label class="field--check">
+            <input type="checkbox" id="event-allday" name="allDay">
+            All day
+          </label>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="event-start-date">Starts</label>
+              <input type="date" id="event-start-date" name="startDate" min="1900-01-01" max="2100-12-31" required>
+            </div>
+            <div class="field" data-time-field="start">
+              <label for="event-start-time">Start time</label>
+              <input type="time" id="event-start-time" name="startTime">
+            </div>
+            <div class="field">
+              <label for="event-end-date">Ends</label>
+              <input type="date" id="event-end-date" name="endDate" min="1900-01-01" max="2100-12-31">
+            </div>
+            <div class="field" data-time-field="end">
+              <label for="event-end-time">End time</label>
+              <input type="time" id="event-end-time" name="endTime">
+            </div>
+            <div class="field">
+              <label for="event-category">Category</label>
+              <select id="event-category" name="category">
+                <option value="GENERAL">General</option>
+                <option value="FAMILY">Family</option>
+                <option value="HOME">Home</option>
+                <option value="HEALTH">Health</option>
+                <option value="WORK">Work</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="event-location">Location</label>
+              <input type="text" id="event-location" name="location" maxlength="200" placeholder="Optional">
+            </div>
+            <div class="field">
+              <label for="event-reminder">Reminder</label>
+              <select id="event-reminder" name="reminder">
+                <option value="">No reminder</option>
+                <option value="0">At start</option>
+                <option value="10">10 minutes before</option>
+                <option value="30">30 minutes before</option>
+                <option value="60">1 hour before</option>
+                <option value="1440">1 day before</option>
+              </select>
+            </div>
+          </div>
+
+          <fieldset class="repeat-box" data-repeat>
+            <legend>Repeat</legend>
+            <div class="form-grid">
+              <div class="field">
+                <label for="event-repeat">Frequency</label>
+                <select id="event-repeat" name="recurrenceFrequency">
+                  <option value="NONE">Does not repeat</option>
+                  <option value="DAILY">Daily</option>
+                  <option value="WEEKLY">Weekly</option>
+                  <option value="MONTHLY">Monthly</option>
+                  <option value="YEARLY">Yearly</option>
+                </select>
+              </div>
+              <div class="field" data-repeat-interval hidden>
+                <label for="event-repeat-interval">Every</label>
+                <input type="number" id="event-repeat-interval" name="recurrenceInterval" min="1" max="99" value="1">
+              </div>
+              <div class="field" data-repeat-end hidden>
+                <label for="event-repeat-end">Until</label>
+                <input type="date" id="event-repeat-end" name="recurrenceEnd" min="1900-01-01" max="2100-12-31">
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary">Save event</button>
+            <a class="btn btn--ghost" href="/pages/calendar.html">Cancel</a>
+            <button type="button" class="btn btn--danger" data-delete hidden>Delete</button>
+          </div>
+          <p id="event-form-status" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/event-form.js"></script>
+</body>
+</html>
