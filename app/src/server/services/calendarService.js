@@ -4,7 +4,9 @@ import { parseDateString } from '../validators/format.js';
 import * as calendarRepository from '../repositories/calendarRepository.js';
 import * as taskRepository from '../repositories/taskRepository.js';
 import * as mealRepository from '../repositories/mealRepository.js';
+import * as financeRepository from '../repositories/financeRepository.js';
 import { toMealEventView } from './mealService.js';
+import { toBillEventView } from './financePlanningService.js';
 import { DAY_MS, occurrenceDates } from '../utils/recurrence.js';
 import {
   endOfDayFromString,
@@ -149,10 +151,15 @@ function assertRecurrenceEnd(recurrence, startAt, allDay, timezone) {
 export async function listEvents({ user, householdId, query }) {
   const range = resolveRange(user, query);
 
-  const [events, tasks, meals] = await Promise.all([
+  const [events, tasks, meals, bills] = await Promise.all([
     calendarRepository.listEventsForRange(householdId, { from: range.from, to: range.to }),
     taskRepository.listTasksDueBetween(householdId, range.from, range.to),
     mealRepository.listRange(
+      householdId,
+      parseDateString(range.fromString),
+      parseDateString(range.toString),
+    ),
+    financeRepository.listBillsForCalendar(
       householdId,
       parseDateString(range.fromString),
       parseDateString(range.toString),
@@ -187,6 +194,9 @@ export async function listEvents({ user, householdId, query }) {
   }
   for (const meal of meals) {
     items.push(toMealEventView(meal, range.timezone));
+  }
+  for (const bill of bills) {
+    items.push(toBillEventView(bill, range.timezone));
   }
 
   items.sort(

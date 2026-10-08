@@ -12,6 +12,10 @@
 // recipe_ingredients, meal_plan_entries, shopping_lists, shopping_list_items,
 // inventory_items and inventory_transactions — see docs/recipes.md,
 // docs/meals.md, docs/shopping.md and docs/inventory.md.
+// Phase 7 (finance) adds finance_accounts, finance_categories,
+// financial_transactions, finance_receipts, finance_budgets, finance_bills and
+// finance_recurring_transactions — see docs/finance.md. Money is stored as
+// Decimal(14,2) and serialized as 2-decimal strings (never JS floats).
 
 generator client {
   provider = "prisma-client-js"
@@ -171,6 +175,82 @@ enum InventoryTransactionType {
   @@map("inventory_transaction_type")
 }
 
+// Phase 7 — household finance (see docs/finance.md).
+//
+// One ledger table (`financial_transactions`) holds income, expenses and
+// transfers. Amounts are positive magnitudes; direction comes from `type`.
+// Transfers never count as income or expense. History is immutable: rows are
+// voided, never deleted, and money fields can never be patched.
+
+enum FinanceAccountType {
+  CASH
+  BANK
+  CREDIT_CARD
+  E_WALLET
+  OTHER
+
+  @@map("finance_account_type")
+}
+
+enum FinanceCategoryType {
+  INCOME
+  EXPENSE
+
+  @@map("finance_category_type")
+}
+
+enum FinanceTransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+
+  @@map("finance_transaction_type")
+}
+
+enum FinanceTransactionStatus {
+  POSTED
+  VOIDED
+
+  @@map("finance_transaction_status")
+}
+
+// Traceability: which module produced a transaction. `sourceId` carries the
+// bill id; recurrence-generated rows also link through recurringTransactionId.
+enum FinanceSourceType {
+  MANUAL
+  BILL
+  RECURRING
+
+  @@map("finance_source_type")
+}
+
+// Only MONTHLY exists today; the enum is the extension point for weekly /
+// yearly / custom budget periods.
+enum FinanceBudgetPeriod {
+  MONTHLY
+
+  @@map("finance_budget_period")
+}
+
+// Stored states only. DUE and OVERDUE are derived from dueDate at read time
+// (never stored), exactly like inventory expiry status.
+enum FinanceBillStatus {
+  UPCOMING
+  PAID
+  CANCELLED
+
+  @@map("finance_bill_status")
+}
+
+enum FinanceRecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+
+  @@map("finance_recurrence_frequency")
+}
+
 model User {
   id                String    @id @default(cuid())
   // citext-style uniqueness: emails are normalized to lowercase in the
@@ -185,8 +265,8 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  activeHousehold         Household?               @relation("UserActiveHousehold", fields: [activeHouseholdId], references: [id], onDelete: SetNull)
-  ownedHouseholds         Household[]              @relation("HouseholdOwner")
+  activeHousehold         Household?                    @relation("UserActiveHousehold", fields: [activeHouseholdId], references: [id], onDelete: SetNull)
+  ownedHouseholds         Household[]                   @relation("HouseholdOwner")
   sessions                Session[]
   memberships             HouseholdMember[]
   passwordResetTokens     PasswordResetToken[]
@@ -194,14 +274,20 @@ model User {
   preferences             UserPreference?
   diaryEntries            DiaryEntry[]
   diaryTags               DiaryTag[]
-  tasksCreated            Task[]                   @relation("TaskCreator")
-  tasksAssigned           Task[]                   @relation("TaskAssignee")
-  calendarEvents          CalendarEvent[]          @relation("EventCreator")
-  recipesCreated          Recipe[]                 @relation("RecipeCreator")
-  mealPlanEntries         MealPlanEntry[]          @relation("MealEntryCreator")
-  shoppingLists           ShoppingList[]           @relation("ShoppingListCreator")
-  inventoryItems          InventoryItem[]          @relation("InventoryItemCreator")
-  inventoryTransactions   InventoryTransaction[]   @relation("InventoryTransactionCreator")
+  tasksCreated            Task[]                        @relation("TaskCreator")
+  tasksAssigned           Task[]                        @relation("TaskAssignee")
+  calendarEvents          CalendarEvent[]               @relation("EventCreator")
+  recipesCreated          Recipe[]                      @relation("RecipeCreator")
+  mealPlanEntries         MealPlanEntry[]               @relation("MealEntryCreator")
+  shoppingLists           ShoppingList[]                @relation("ShoppingListCreator")
+  inventoryItems          InventoryItem[]               @relation("InventoryItemCreator")
+  inventoryTransactions   InventoryTransaction[]        @relation("InventoryTransactionCreator")
+  financeAccountsCreated  FinanceAccount[]              @relation("FinanceAccountCreator")
+  financeTransactions     FinancialTransaction[]        @relation("FinanceTransactionCreator")
+  financeVoided           FinancialTransaction[]        @relation("FinanceTransactionVoider")
+  financeBudgetsCreated   FinanceBudget[]               @relation("FinanceBudgetCreator")
+  financeBillsCreated     FinanceBill[]                 @relation("FinanceBillCreator")
+  financeRecurringCreated FinanceRecurringTransaction[] @relation("FinanceRecurringCreator")
 
   @@map("users")
 }
@@ -232,9 +318,9 @@ model Household {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  owner                 User                   @relation("HouseholdOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  owner                 User                          @relation("HouseholdOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
   members               HouseholdMember[]
-  activeMembers         User[]                 @relation("UserActiveHousehold")
+  activeMembers         User[]                        @relation("UserActiveHousehold")
   diaryEntries          DiaryEntry[]
   diaryTags             DiaryTag[]
   taskCategories        TaskCategory[]
@@ -245,6 +331,12 @@ model Household {
   shoppingLists         ShoppingList[]
   inventoryItems        InventoryItem[]
   inventoryTransactions InventoryTransaction[]
+  financeAccounts       FinanceAccount[]
+  financeCategories     FinanceCategory[]
+  financeTransactions   FinancialTransaction[]
+  financeBudgets        FinanceBudget[]
+  financeBills          FinanceBill[]
+  financeRecurring      FinanceRecurringTransaction[]
 
   @@index([ownerUserId])
   @@map("households")
@@ -714,4 +806,247 @@ model InventoryTransaction {
   @@index([itemId, createdAt(sort: Desc)])
   @@index([householdId, createdAt(sort: Desc)])
   @@map("inventory_transactions")
+}
+
+// Phase 7 — household finance (see docs/finance.md).
+
+// A wallet/account the household tracks manually. Balances are DERIVED from
+// openingBalance + posted transactions (see docs/finance.md); no cached
+// balance column exists to drift.
+model FinanceAccount {
+  id             String             @id @default(cuid())
+  householdId    String             @map("household_id")
+  createdById    String             @map("created_by_id")
+  name           String
+  // Lowercased name for case-insensitive uniqueness within the household.
+  normalized     String
+  type           FinanceAccountType @default(CASH)
+  // ISO 4217 code (see validators/finance.js). Transactions on the account
+  // must use the same currency; there is no FX conversion in this phase.
+  currency       String             @db.VarChar(3)
+  openingBalance Decimal            @default(0) @map("opening_balance") @db.Decimal(14, 2)
+  // Archived accounts keep history but disappear from pickers.
+  active         Boolean            @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household           Household                     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy           User                          @relation("FinanceAccountCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  transactions        FinancialTransaction[]        @relation("TransactionAccount")
+  counterTransactions FinancialTransaction[]        @relation("TransactionCounterAccount")
+  bills               FinanceBill[]
+  recurring           FinanceRecurringTransaction[]
+
+  @@unique([householdId, normalized])
+  @@index([householdId, active])
+  @@map("finance_accounts")
+}
+
+// Income/expense categories. `householdId` is NULL for the global catalog
+// seeded by migration (read-only through the API); household rows are fully
+// manageable. Archived categories stay attached to history.
+model FinanceCategory {
+  id          String              @id @default(cuid())
+  householdId String?             @map("household_id")
+  name        String
+  normalized  String
+  type        FinanceCategoryType
+  // Optional icon name from the client sprite (rendered with a fallback).
+  icon        String?
+  active      Boolean             @default(true)
+  sortOrder   Int                 @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household    Household?                    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  transactions FinancialTransaction[]
+  budgets      FinanceBudget[]
+  bills        FinanceBill[]
+  recurring    FinanceRecurringTransaction[]
+
+  @@unique([householdId, type, normalized])
+  @@index([householdId, type, active])
+  @@map("finance_categories")
+}
+
+// The single money ledger. Rows are never deleted; voiding keeps the history
+// readable while excluding the transaction from balances and reports.
+model FinancialTransaction {
+  id               String                   @id @default(cuid())
+  householdId      String                   @map("household_id")
+  createdById      String                   @map("created_by_id")
+  type             FinanceTransactionType
+  status           FinanceTransactionStatus @default(POSTED)
+  // Always a positive magnitude, max 12 integer digits + 2 decimals.
+  amount           Decimal                  @db.Decimal(14, 2)
+  currency         String                   @db.VarChar(3)
+  // Required for INCOME/EXPENSE, forbidden for TRANSFER (validated).
+  categoryId       String?                  @map("category_id")
+  // Required for TRANSFER (source account); optional for INCOME/EXPENSE.
+  accountId        String?                  @map("account_id")
+  counterAccountId String?                  @map("counter_account_id")
+  transactionDate  DateTime                 @map("transaction_date") @db.Date
+  description      String?
+  merchant         String?
+  notes            String?
+
+  // Which module produced the row. BILL rows carry the bill id in sourceId;
+  // RECURRING rows link through recurringTransactionId (unique per date).
+  sourceType             FinanceSourceType @default(MANUAL) @map("source_type")
+  sourceId               String?           @map("source_id")
+  recurringTransactionId String?           @map("recurring_transaction_id")
+
+  // Void audit trail (one-way; a voided row can never return to POSTED).
+  voidedAt   DateTime? @map("voided_at")
+  voidedById String?   @map("voided_by_id")
+  voidReason String?   @map("void_reason")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household      Household                    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy      User                         @relation("FinanceTransactionCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  voidedBy       User?                        @relation("FinanceTransactionVoider", fields: [voidedById], references: [id], onDelete: SetNull)
+  category       FinanceCategory?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  account        FinanceAccount?              @relation("TransactionAccount", fields: [accountId], references: [id], onDelete: SetNull)
+  counterAccount FinanceAccount?              @relation("TransactionCounterAccount", fields: [counterAccountId], references: [id], onDelete: SetNull)
+  recurring      FinanceRecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
+  receipt        FinanceReceipt?
+  paidBill       FinanceBill?
+
+  // One generated transaction per occurrence date; NULLs (manual rows) are
+  // unconstrained in PostgreSQL.
+  @@unique([recurringTransactionId, transactionDate])
+  @@index([householdId, transactionDate(sort: Desc)])
+  @@index([householdId, type, transactionDate])
+  @@index([householdId, categoryId, transactionDate])
+  @@index([householdId, accountId])
+  @@index([householdId, status])
+  @@index([householdId, sourceType, sourceId])
+  @@map("financial_transactions")
+}
+
+// At most one receipt per transaction; the physical file lives under
+// uploads/finance/ under a server-generated name (never the client's).
+model FinanceReceipt {
+  id            String @id @default(cuid())
+  transactionId String @unique @map("transaction_id")
+  // Client filename, sanitized for display/download only — never a path.
+  originalName  String @map("original_name")
+  // Server-generated: <random>.<ext> — the only name ever used on disk.
+  storedName    String @unique @map("stored_name")
+  mimeType      String @map("mime_type")
+  sizeBytes     Int    @map("size_bytes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  transaction FinancialTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("finance_receipts")
+}
+
+// Monthly budget for one category. Actual spending is computed from posted
+// EXPENSE transactions of the same category + currency + month; the
+// percentage is derived, never stored.
+model FinanceBudget {
+  id          String              @id @default(cuid())
+  householdId String              @map("household_id")
+  createdById String              @map("created_by_id")
+  categoryId  String              @map("category_id")
+  period      FinanceBudgetPeriod @default(MONTHLY)
+  amount      Decimal             @db.Decimal(14, 2)
+  currency    String              @db.VarChar(3)
+  year        Int
+  month       Int
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User            @relation("FinanceBudgetCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  category  FinanceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@unique([householdId, categoryId, period, year, month])
+  @@index([householdId, year, month])
+  @@map("finance_budgets")
+}
+
+// A payable reminder. Cash-basis model: a bill is NOT an expense; paying it
+// creates an EXPENSE transaction (see docs/finance.md). `status` stores only
+// UPCOMING/PAID/CANCELLED — DUE and OVERDUE are derived from dueDate.
+model FinanceBill {
+  id          String            @id @default(cuid())
+  householdId String            @map("household_id")
+  createdById String            @map("created_by_id")
+  name        String
+  amount      Decimal           @db.Decimal(14, 2)
+  currency    String            @db.VarChar(3)
+  dueDate     DateTime          @map("due_date") @db.Date
+  categoryId  String            @map("category_id")
+  accountId   String?           @map("account_id")
+  status      FinanceBillStatus @default(UPCOMING)
+  // Informational flag for now; automatic regeneration is deferred (docs).
+  recurring   Boolean           @default(false)
+  notes       String?
+
+  paidAt            DateTime? @map("paid_at")
+  // Unique FK to the expense that settled the bill (traceability + the
+  // duplicate-payment guard is enforced transactionally in the service).
+  paidTransactionId String?   @unique @map("paid_transaction_id")
+  cancelledAt       DateTime? @map("cancelled_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household       Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy       User                  @relation("FinanceBillCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  category        FinanceCategory       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  account         FinanceAccount?       @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  paidTransaction FinancialTransaction? @relation(fields: [paidTransactionId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, dueDate])
+  @@index([householdId, status])
+  @@index([householdId, categoryId])
+  @@map("finance_bills")
+}
+
+// Recurring income/expense rule. Occurrences are materialized as ledger rows
+// only up to "today" (cash-basis, bounded per call): `nextOccurrence` is the
+// cursor and the service advances it. Paused rules keep their cursor.
+model FinanceRecurringTransaction {
+  id          String                 @id @default(cuid())
+  householdId String                 @map("household_id")
+  createdById String                 @map("created_by_id")
+  // Validator restricts this to INCOME or EXPENSE (no recurring transfers).
+  type        FinanceTransactionType
+  amount      Decimal                @db.Decimal(14, 2)
+  currency    String                 @db.VarChar(3)
+  categoryId  String                 @map("category_id")
+  accountId   String?                @map("account_id")
+  description String?
+  merchant    String?
+  notes       String?
+
+  frequency      FinanceRecurrenceFrequency
+  interval       Int                        @default(1)
+  startDate      DateTime                   @map("start_date") @db.Date
+  endDate        DateTime?                  @map("end_date") @db.Date
+  nextOccurrence DateTime?                  @map("next_occurrence") @db.Date
+  active         Boolean                    @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household    Household              @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy    User                   @relation("FinanceRecurringCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  category     FinanceCategory        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  account      FinanceAccount?        @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  transactions FinancialTransaction[]
+
+  @@index([householdId, active])
+  @@index([householdId, nextOccurrence])
+  @@map("finance_recurring_transactions")
 }

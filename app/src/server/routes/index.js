@@ -12,6 +12,7 @@ import recipesRoutes from './recipes.routes.js';
 import mealsRoutes from './meals.routes.js';
 import shoppingRoutes from './shopping.routes.js';
 import inventoryRoutes from './inventory.routes.js';
+import financeRoutes from './finance.routes.js';
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use('/recipes', recipesRoutes);
 router.use('/meals', mealsRoutes);
 router.use('/shopping-lists', shoppingRoutes);
 router.use('/inventory', inventoryRoutes);
+router.use('/finance', financeRoutes);
 
 export default router;
