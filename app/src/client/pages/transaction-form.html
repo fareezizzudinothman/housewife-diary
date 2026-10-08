@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Record an income, expense or transfer in Housewife Diary.">
+  <title>Transaction — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="New transaction">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <a class="back-link" href="/pages/finance.html">← All finance</a>
+
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Money</p>
+            <h1 data-form-title>New transaction</h1>
+            <p data-form-subtitle>Record income, an expense, or a transfer between accounts.</p>
+          </div>
+        </div>
+
+        <div data-form-notice></div>
+
+        <form id="transaction-form" class="card form" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="tx-type">Type</label>
+              <select id="tx-type" name="type">
+                <option value="EXPENSE" selected>Expense</option>
+                <option value="INCOME">Income</option>
+                <option value="TRANSFER">Transfer</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="tx-amount">Amount</label>
+              <input type="number" id="tx-amount" name="amount" min="0.01" step="0.01" required>
+            </div>
+            <div class="field">
+              <label for="tx-currency">Currency</label>
+              <select id="tx-currency" name="currency"></select>
+            </div>
+            <div class="field">
+              <label for="tx-date">Date</label>
+              <input type="date" id="tx-date" name="transactionDate" min="1900-01-01" max="2100-12-31" required>
+            </div>
+          </div>
+
+          <div class="field" data-category-field>
+            <label for="tx-category">Category</label>
+            <select id="tx-category" name="categoryId"></select>
+            <p class="field-hint">Categories with income and expense types are kept separate.</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="field" data-account-field>
+              <label for="tx-account" data-account-label>Account</label>
+              <select id="tx-account" name="accountId"></select>
+            </div>
+            <div class="field" data-counter-account-field hidden>
+              <label for="tx-counter-account">To account</label>
+              <select id="tx-counter-account" name="counterAccountId"></select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="tx-description">Description</label>
+            <input type="text" id="tx-description" name="description" maxlength="200" placeholder="Weekly groceries">
+          </div>
+
+          <div class="field">
+            <label for="tx-merchant">Merchant / payee</label>
+            <input type="text" id="tx-merchant" name="merchant" maxlength="120" placeholder="NTUC FairPrice">
+          </div>
+
+          <div class="field">
+            <label for="tx-notes">Notes</label>
+            <textarea id="tx-notes" name="notes" rows="2" maxlength="1000" placeholder="Optional"></textarea>
+          </div>
+
+          <fieldset class="repeat-box" data-receipt-section hidden>
+            <legend>Receipt</legend>
+            <div data-receipt-current></div>
+            <div class="field">
+              <label for="tx-receipt-file">Attach a receipt (JPEG, PNG, WebP or PDF, max 5MB)</label>
+              <input type="file" id="tx-receipt-file" accept="image/jpeg,image/png,image/webp,application/pdf">
+            </div>
+            <p class="field-hint">Receipts are private and only visible to this household.</p>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" disabled>Save transaction</button>
+            <a class="btn btn--ghost" href="/pages/finance.html">Cancel</a>
+            <button type="button" class="btn btn--danger" data-void hidden>Void transaction</button>
+          </div>
+          <p id="transaction-status" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/transaction-form.js"></script>
+</body>
+</html>

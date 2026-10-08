@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Recurring income and expenses in Housewife Diary.">
+  <title>Recurring — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Recurring">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Money</p>
+            <h1>Recurring</h1>
+            <p>Salary, rent and subscriptions — occurrences post to the ledger when they fall due.</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn--primary" data-new-rule disabled>New rule</button>
+          </div>
+        </div>
+
+        <p id="recurring-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div class="toolbar">
+          <label class="field--check">
+            <span class="field-label">Show</span>
+            <select data-active-filter>
+              <option value="ALL">All</option>
+              <option value="ACTIVE">Active</option>
+              <option value="PAUSED">Paused</option>
+            </select>
+          </label>
+          <label class="field--check">
+            <span class="field-label">Type</span>
+            <select data-type-filter>
+              <option value="">All types</option>
+              <option value="INCOME">Income</option>
+              <option value="EXPENSE">Expense</option>
+            </select>
+          </label>
+        </div>
+
+        <div data-recurring aria-live="polite"></div>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/recurring.js"></script>
+</body>
+</html>
