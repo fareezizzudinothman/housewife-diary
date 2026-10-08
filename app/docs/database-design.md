@@ -1,6 +1,6 @@
 # Database design
 
-PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. Migrations so far: `20261007041913_auth_core` (Phase 2, identity tables), `20261007052226_theme_preferences` (Phase 3, theme tables), `20261007071119_diary_core` (Phase 4, diary tables + mood seeds) and `20261007084410_tasks_core` (Phase 5, tasks + calendar tables).
+PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. Migrations so far: `20261007041913_auth_core` (Phase 2, identity tables), `20261007052226_theme_preferences` (Phase 3, theme tables), `20261007071119_diary_core` (Phase 4, diary tables + mood seeds), `20261007084410_tasks_core` (Phase 5, tasks + calendar tables) and `20261007100833_meals_shopping_inventory` (Phase 6, recipes + meals + shopping + inventory tables).
 
 ## Principles
 
@@ -88,13 +88,62 @@ calendar_events   id, household_id (FK, cascade), created_by_id (FK users, casca
 
 Recurring **tasks** store the rule on a series head and materialize bounded occurrence rows (`series_id` self-relation, `onDelete: Cascade`); recurring **calendar events** keep the rule on the head only and expand in memory per ranged query. `assigned_to_id` and `category_id` are `SET NULL` so removing a member or category never deletes history. `source_type`/`source_id` reserve the calendar for derived items — only `MANUAL` rows are ever persisted. Reminder columns are stored foundation; delivery arrives in Phase 9. Full design: [tasks.md](tasks.md), [calendar.md](calendar.md).
 
+## Recipes, meals, shopping and inventory model (Phase 6 — implemented)
+
+```text
+recipes              id, household_id (FK, cascade), created_by_id (FK users, cascade),
+                     title, description, instructions, servings, prep_minutes, cook_minutes,
+                     category, cuisine, is_favourite, notes, created_at, updated_at
+                     — indexes (household_id, updated_at DESC), (household_id, is_favourite)
+
+recipe_ingredients   id, recipe_id (FK recipes, cascade), name, normalized,
+                     quantity Decimal(12,3) NULL, unit, optional, notes, sort_order
+                     — indexes (recipe_id, sort_order), (normalized)
+
+meal_plan_entries    id, household_id (FK, cascade), created_by_id (FK users, cascade),
+                     recipe_id (FK recipes, SET NULL), date (DATE), meal_type (meal_type enum),
+                     title, notes, created_at, updated_at
+                     — indexes (household_id, date), (household_id, meal_type), (recipe_id)
+
+shopping_lists       id, household_id (FK, cascade), created_by_id (FK users, cascade),
+                     name, notes, archived_at, created_at, updated_at
+                     — index (household_id, archived_at)
+
+shopping_list_items  id, list_id (FK shopping_lists, cascade), recipe_id (FK recipes, SET NULL),
+                     name, normalized, quantity Decimal(12,3) NULL, unit,
+                     category (item_category enum, default OTHER), notes, purchased_at,
+                     created_at, updated_at
+                     — indexes (list_id, purchased_at), (list_id, category), (normalized)
+
+inventory_items      id, household_id (FK, cascade), created_by_id (FK users, cascade),
+                     name, normalized, quantity Decimal(12,3) default 0, unit,
+                     category (item_category), location (inventory_location default PANTRY),
+                     expires_at (DATE) NULL, minimum_quantity Decimal(12,3) default 0,
+                     notes, created_at, updated_at
+                     — indexes (household_id, normalized), (household_id, expires_at),
+                       (household_id, category), (household_id, location)
+
+inventory_transactions id, household_id (FK, cascade), item_id (FK inventory_items, cascade),
+                     created_by_id (FK users, cascade), type (inventory_transaction_type),
+                     quantity_delta Decimal(12,3), quantity_after Decimal(12,3), note, created_at
+                     — indexes (item_id, created_at DESC), (household_id, created_at DESC)
+```
+
+Enums: `meal_type` (`BREAKFAST|LUNCH|SNACK|DINNER`), `item_category` (nine shared kitchen categories), `inventory_location` (`PANTRY|REFRIGERATOR|FREEZER|HOUSEHOLD|OTHER`), `inventory_transaction_type` (`PURCHASE|CONSUME|WASTE|ADJUST`).
+
+- All kitchen quantities are `Decimal(12,3)`; `normalized` names are the cross-module matching keys (recipe ingredient → shopping line → inventory item).
+- `recipe_id` on meal entries and shopping items is `SET NULL`: deleting a recipe never removes planned meals or shopping history (meals keep a title snapshot).
+- Deleting a shopping list cascades its items; deleting an inventory item cascades its ledger.
+- Statuses (stock level, expiry) are **derived at read time**, never stored — see [inventory.md](inventory.md).
+- Full design: [recipes.md](recipes.md), [meals.md](meals.md), [shopping.md](shopping.md), [inventory.md](inventory.md).
+
 ## Planned entity map by module
 
 | Module | Tables | Highlights |
 | --- | --- | --- |
-| Meals (P6) | `meals`, `recipes`, `recipe_ingredients`, `ingredients` | meal slots (breakfast/lunch/dinner/snack) by date; recipes favoriteable |
-| Shopping (P6) | `shopping_lists`, `shopping_items`, `stores` | purchased flags, price tracking per item/store |
-| Inventory (P6) | `inventory_items`, `inventory_categories`, `inventory_transactions` | location (pantry/fridge/freezer/supplies), quantity, minimum stock, expiry, transaction ledger (add/remove/consume) |
+| Meals (P6) | `recipes`, `recipe_ingredients`, `meal_plan_entries` | structured ingredients; meal slots by date; recipe reference with title snapshot |
+| Shopping (P6) | `shopping_lists`, `shopping_list_items` | purchased timestamp, recipe/meal-plan merge by normalized name + unit |
+| Inventory (P6) | `inventory_items`, `inventory_transactions` | location, quantity, minimum stock, expiry; full transaction ledger with `quantity_after` |
 | Finance (P7) | `expenses`, `expense_categories`, `budgets`, `bills`, `receipts` | expenses/income via signed amount or type flag; budgets per category/period; bills recurring rules |
 | Family (P8) | `family_members`, `family_events` | household profiles (may or may not be users), birthdays/important dates |
 | House mgmt (P8) | `home_areas`, `cleaning_tasks`, `maintenance_records` | areas (kitchen/bathroom/garden…), schedules, history |

@@ -132,13 +132,17 @@ Override validation, the allowlist and the response shapes are specified in [the
 | --- | --- | --- | --- |
 | GET | `/` | session + household | Aggregated overview; `403` when the user has no active household |
 
-Response `data`: `{ user, household, diary, tasks, calendar, meals, shopping, inventory, finance }`. Each implemented module reports `status: 'available'` with its own summary or `status: 'empty'`:
+Response `data`: `{ user, household, diary, tasks, calendar, meals, shopping, inventory, recipes, finance }`. Each implemented module reports `status: 'available'` with its own summary or `status: 'empty'`:
 
 - `diary`: `count` + `recent` (five content-free items).
 - `tasks`: `openCount`, `dueTodayCount` + `recent` (five open tasks).
 - `calendar`: `upcomingCount` (next 7 days) + `next` (up to three events inside that window).
+- `meals`: `today[]` + `next` (meal summaries with `displayTitle`).
+- `shopping`: `activeList` (`id`, `name`, `itemCount`, `remaining`) or `null`.
+- `inventory`: `lowStockCount`, `outOfStockCount`, `expiringSoonCount`, `expiredCount` + `alerts` (up to three).
+- `recipes`: `count` + `favourites` (up to three `{ id, title }`).
 
-The four future modules (`meals`, `shopping`, `inventory`, `finance`) always return `status: 'not_available'`.
+Only `finance` remains `status: 'not_available'`.
 
 ### `/api/diary`
 
@@ -191,16 +195,85 @@ Both modules require a session and an active household (`requireHousehold`); eve
 
 Range responses mix native events (`sourceType: MANUAL`), recurring expansions (`recurring: true`), and read-only task-derived items (`sourceType: TASK`, id `task:<taskId>`). Full design: [calendar.md](calendar.md).
 
+## Recipes, meals, shopping and inventory endpoints (implemented — Phase 6)
+
+All four modules require a session and an active household (`requireHousehold`); every id resolves inside the active household only (`404` across households). Shared kitchen vocabulary (meal types, item categories, inventory locations, units, decimals) lives in `validators/kitchen.js`.
+
+### `/api/recipes`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/meta` | session + household | Distinct categories in use (registered before `/:id`) |
+| GET | `/` | session + household | List: `search`, `category`, `favourite`, `sort` ∈ `updated\|created\|title`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { recipe }`; structured `ingredients[]`; rate limited (`recipes-write`) |
+| GET | `/:id` | session + household | Detail with ordered ingredients + `createdBy` |
+| PATCH | `/:id` | session + household | Partial; supplying `ingredients` replaces the list, `[]` clears it |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }`; planned meals keep the title as a snapshot |
+| POST | `/:id/favourite` | session + household | Sets the favourite flag |
+| DELETE | `/:id/favourite` | session + household | Clears the favourite flag |
+| POST | `/:id/duplicate` | session + household | `201 { recipe }`; optional `{ title }`; ingredients copied |
+
+Full design: [recipes.md](recipes.md).
+
+### `/api/meals`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/shopping-plan` | session + household | Read-only aggregation of planned recipe ingredients (`from`/`to`, same range rules) |
+| GET | `/` | session + household | Range read: `from`/`to` (default current Monday–Sunday week, max 90 days), `mealType`; sorted by date then slot |
+| POST | `/` | session + household | `201 { meal }`; requires `recipeId` or `title`; rate limited (`meals-write`) |
+| GET | `/:id` | session + household | Detail with `displayTitle` and resolved `recipe` |
+| PATCH | `/:id` | session + household | Partial; must keep at least one of `recipeId`/`title` |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }` |
+
+Meals also surface through `GET /api/calendar` as derived all-day items (`sourceType: MEAL`, id `meal:<entryId>`). Full design: [meals.md](meals.md).
+
+### `/api/shopping-lists`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `search`, `archived`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { list }`; rate limited (`shopping-write`) |
+| GET | `/:id/items` | session + household | Items: `search`, `purchased`, `category`, `page`, `limit` (≤200) |
+| POST | `/:id/items` | session + household | `201 { item }` |
+| PATCH | `/:id/items/:itemId` | session + household | Partial; `purchased` toggle stamps/clears `purchasedAt` |
+| DELETE | `/:id/items/:itemId` | session + household | `200 { id, deleted: true }` |
+| POST | `/:id/items/:itemId/to-inventory` | session + household | `201 { item, inventoryItem, merged }`; records a `PURCHASE` and marks the line bought |
+| POST | `/:id/from-recipe/:recipeId` | session + household | `201 { list, added, merged, items }`; optional `{ servings }` scales quantities |
+| POST | `/:id/from-meals` | session + household | `201 { list, added, merged }`; `{ from, to, items? }` commits the reviewed selection or the live plan |
+| GET | `/:id` | session + household | List detail with `itemCount` + `remaining` |
+| PATCH | `/:id` | session + household | Rename/notes/archive |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }`; items cascade |
+
+Full design: [shopping.md](shopping.md).
+
+### `/api/inventory`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `search`, `category`, `location`, `stock`, `expiry`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { item }`; opening `quantity > 0` records a `PURCHASE`; rate limited (`inventory-write`) |
+| GET | `/:id` | session + household | Detail with derived `status`/`expiryStatus` |
+| PATCH | `/:id` | session + household | Metadata only — `quantity` is rejected |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }`; ledger cascades |
+| POST | `/:id/consume` | session + household | `200 { item, transaction }`; `CONSUME`, rejects negative stock |
+| POST | `/:id/waste` | session + household | `200 { item, transaction }`; `WASTE` |
+| POST | `/:id/add-stock` | session + household | `200 { item, transaction }`; `PURCHASE` |
+| POST | `/:id/adjust` | session + household | `200 { item, transaction }`; `ADJUST` sets the absolute value |
+| GET | `/:id/transactions` | session + household | Ledger, newest first, `page`/`limit` (≤100) |
+
+Full design: [inventory.md](inventory.md).
+
 ## Planned endpoint map (future phases)
 
 | Phase | Base path | Endpoints (representative) |
 | --- | --- | --- |
-| 6 | `/api/meals`, `/api/recipes` | meal plans, recipes with ingredients, favorites |
-| 6 | `/api/shopping`, `/api/inventory` | lists/items/purchase, items/transactions/low-stock |
 | 7 | `/api/expenses`, `/api/bills`, `/api/budgets` | CRUD, monthly report, spending analysis |
 | 8 | `/api/family`, `/api/home`, `/api/documents`, `/api/notes` | module CRUD |
 | 9 | `/api/notifications` | list, read, preferences; backup/export endpoints |
 | 10 | `/api/ai` | conversations, messages, tool-grounded responses |
+
+Phase 6 endpoints (`/api/recipes`, `/api/meals`, `/api/shopping-lists`, `/api/inventory`) are documented above.
 
 ## Versioning
 
