@@ -1,6 +1,6 @@
 # Database design
 
-PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. Migrations so far: `20261007041913_auth_core` (Phase 2, identity tables), `20261007052226_theme_preferences` (Phase 3, theme tables), `20261007071119_diary_core` (Phase 4, diary tables + mood seeds), `20261007084410_tasks_core` (Phase 5, tasks + calendar tables), `20261007100833_meals_shopping_inventory` (Phase 6, recipes + meals + shopping + inventory tables), `20261008024333_finance_core` + `20261008024415_finance_seed_categories` (Phase 7, finance tables + 17 global category seeds) and `20261008040419_finance_recurrence_daily` (adds `DAILY` to the finance recurrence enum).
+PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. Migrations so far: `20261007041913_auth_core` (Phase 2, identity tables), `20261007052226_theme_preferences` (Phase 3, theme tables), `20261007071119_diary_core` (Phase 4, diary tables + mood seeds), `20261007084410_tasks_core` (Phase 5, tasks + calendar tables), `20261007100833_meals_shopping_inventory` (Phase 6, recipes + meals + shopping + inventory tables), `20261008024333_finance_core` + `20261008024415_finance_seed_categories` (Phase 7, finance tables + 17 global category seeds), `20261008040419_finance_recurrence_daily` (adds `DAILY` to the finance recurrence enum), and `20261008050231_family_home_documents` (Phase 8, family + home + documents + notes + ideas tables).
 
 ## Principles
 
@@ -226,3 +226,124 @@ Only the tables of the current phase are created. Each phase's migration is revi
 - Connection string comes from `DATABASE_URL` (root `.env` for Compose, `app/.env` for local dev).
 - The Docker Compose `postgres` service uses a named volume `postgres_data` — data survives `docker compose down`; only `docker compose down -v` destroys it (destructive — never run casually).
 - Prisma Client is generated at image build (`prisma generate`) and migrations applied at container start (`prisma migrate deploy`).
+
+## Family model (Phase 8 — implemented)
+
+```text
+family_members     id, household_id (FK, cascade), linked_user_id (FK users, SET NULL),
+                   name, relationship, date_of_birth (DATE), notes, active (default true),
+                   created_at, updated_at
+                   — indexes (household_id, active), (household_id, name)
+
+family_events      id, household_id (FK, cascade), member_id (FK family_members, SET NULL),
+                   title, kind, event_date (DATE), repeats_yearly (bool default false),
+                   notes, created_at, updated_at
+                   — indexes (household_id, event_date), (household_id, member_id)
+```
+
+- `linked_user_id` connects a family member to a `users` row (same household) for automatic birthday calendar events.
+- `repeats_yearly` on events enables annual recurrence in Calendar.
+- Soft delete on members via `active` flag (archive). Events are hard-deleted.
+
+## Home management model (Phase 8 — implemented)
+
+```text
+home_rooms              id, household_id (FK, cascade), name, description, active (default true),
+                        created_at, updated_at
+                        — indexes (household_id, active), (household_id, name)
+
+cleaning_schedules      id, household_id (FK, cascade), room_id (FK home_rooms, cascade),
+                        title, frequency (cleaning_frequency), interval (int default 1),
+                        status (cleaning_status default ACTIVE), assigned_member_id (FK family_members, SET NULL),
+                        notes, created_at, updated_at
+                        — indexes (household_id, status), (household_id, room_id), (room_id, next_due)
+                        — frequency enum: DAILY, WEEKLY, MONTHLY; status: ACTIVE, PAUSED
+
+laundry_loads           id, household_id (FK, cascade), category, status (laundry_status default PENDING),
+                        scheduled_date (DATE), notes, created_at, updated_at
+                        — indexes (household_id, status), (household_id, category)
+                        — status enum: PENDING, WASHING, DRYING, FOLDED, COMPLETED
+
+maintenance_records     id, household_id (FK, cascade), room_id (FK home_rooms, SET NULL),
+                        title, category, scheduled_date (DATE), priority (task_priority default MEDIUM),
+                        status (maintenance_status default OPEN), description, transaction_id (FK financial_transactions, SET NULL),
+                        notes, created_at, updated_at
+                        — indexes (household_id, status), (household_id, room_id), (household_id, scheduled_date)
+                        — priority: LOW, MEDIUM, HIGH, URGENT; status: OPEN, IN_PROGRESS, COMPLETED, CANCELLED
+```
+
+Enums: `cleaning_frequency` (`DAILY|WEEKLY|MONTHLY`), `cleaning_status` (`ACTIVE|PAUSED`), `laundry_status` (`PENDING|WASHING|DRYING|FOLDED|COMPLETED`), `maintenance_status` (`OPEN|IN_PROGRESS|COMPLETED|CANCELLED`).
+
+## Documents model (Phase 8 — implemented)
+
+```text
+documents              id, household_id (FK, cascade), uploaded_by_id (FK users, cascade),
+                       title, description, category (doc_category), original_name, stored_name (unique),
+                       mime_type, size_bytes, expiry_date (DATE), expiry_status (doc_expiry_status computed),
+                       reference_type (doc_reference_type), reference_id, created_at, updated_at
+                       — indexes (household_id, category), (household_id, expiry_date), (household_id, reference_type, reference_id),
+                         (household_id, uploaded_by_id), (household_id, created_at DESC)
+                       — size_bytes max 5,242,880 (5 MB)
+                       — stored_name: server-generated hex + validated extension
+```
+
+Enums: `doc_category` (`INSURANCE|WARRANTY|RECEIPT|CONTRACT|PROPERTY|SCHOOL|MEDICAL|FINANCIAL|OTHER`), `doc_reference_type` (`MAINTENANCE|FINANCE_TRANSACTION|INVENTORY|FAMILY_MEMBER`), `doc_expiry_status` (`ACTIVE|EXPIRING_SOON|EXPIRED`).
+
+- File bytes stored under `app/uploads/documents/` (Docker volume); database stores metadata only.
+- `expiry_status` derived at read time: ACTIVE (no expiry or >30 days), EXPIRING_SOON (≤30 days), EXPIRED (past date).
+- Magic-byte verification on upload (JPEG, PNG, WebP, PDF only); `stored_name` server-generated.
+
+## Notes model (Phase 8 — implemented)
+
+```text
+notes                  id, household_id (FK, cascade), user_id (FK users, cascade),
+                       title, content, category, pinned (default false), archived (default false),
+                       tags (text[]), created_at, updated_at
+                       — indexes (household_id, user_id, updated_at DESC), (household_id, pinned, updated_at DESC),
+                         (household_id, archived, updated_at DESC)
+                       — tags: text[], max 10 per note, each 1–40 chars, control chars stripped
+                       — content normalized (CRLF→LF, control chars removed except tab/newline)
+```
+
+- `tags` stored as PostgreSQL `text[]` with `max 10` enforced in service; case-insensitive deduplication.
+- Content is plain text; XSS prevention via `textContent` rendering on client.
+
+## Ideas model (Phase 8 — implemented)
+
+```text
+ideas                  id, household_id (FK, cascade), user_id (FK users, cascade),
+                       title, description, category, priority (task_priority default MEDIUM),
+                       status (idea_status default IDEA), estimated_cost Decimal(14,2) NULL,
+                       currency Char(3) default 'SGD', notes, created_at, updated_at
+                       — indexes (household_id, status, updated_at DESC), (household_id, category),
+                         (household_id, user_id, created_at DESC)
+                       — priority: LOW, MEDIUM, HIGH, URGENT
+                       — status: IDEA, PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+                       — estimated_cost: Decimal(14,2) max 999,999,999,999.99
+                       — currency: ISO 4217 3-letter code
+```
+
+Enums: `idea_status` (`IDEA|PLANNED|IN_PROGRESS|COMPLETED|CANCELLED`).
+
+## Calendar & Task Integrations (Phase 8)
+
+| Source | Calendar derived item | Task generation |
+|--------|----------------------|-----------------|
+| `family_events` | `sourceType: FAMILY`, all-day, `recurring: true` if `repeats_yearly` | — |
+| `family_members.date_of_birth` | `sourceType: FAMILY`, all-day, yearly (`kind: Birthday`) | — |
+| `maintenance_records.scheduled_date` | `sourceType: MAINTENANCE`, all-day | `POST /api/home/maintenance/:id/task` |
+| `ideas` | — | `POST /api/ideas/:id/task` (sets idea status → `PLANNED`) |
+
+Derived calendar items are read-only expansions at query time (no persisted rows). Task generation is an atomic endpoint that creates a Task and updates the source status.
+
+## Dashboard Integration (Phase 8)
+
+`dashboardService.getDashboard()` adds:
+```json
+{
+  "family": { "status": "available", "memberCount": 3, "upcomingBirthdays": [...] },
+  "home": { "status": "available", "overdueMaintenanceCount": 2, "upcomingMaintenance": [...], "dueCleaningCount": 1, "laundry": {...}, "expiringDocumentCount": 1 }
+}
+```
+
+Modules report `status: 'empty'` when the household has no records for that domain.

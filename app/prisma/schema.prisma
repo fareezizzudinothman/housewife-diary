@@ -251,6 +251,87 @@ enum FinanceRecurrenceFrequency {
   @@map("finance_recurrence_frequency")
 }
 
+// Phase 8 — provenance of generated tasks (cleaning definitions, maintenance
+// and ideas create at most one task each; (sourceType, sourceId) is unique and
+// MANUAL rows keep sourceId NULL so they are unconstrained.
+enum TaskSourceType {
+  MANUAL
+  CLEANING
+  MAINTENANCE
+  IDEA
+
+  @@map("task_source_type")
+}
+
+enum CleaningFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+
+  @@map("cleaning_frequency")
+}
+
+enum CleaningStatus {
+  ACTIVE
+  PAUSED
+
+  @@map("cleaning_status")
+}
+
+enum LaundryStatus {
+  PENDING
+  WASHING
+  DRYING
+  FOLDED
+  COMPLETED
+
+  @@map("laundry_status")
+}
+
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@map("maintenance_status")
+}
+
+enum DocumentCategory {
+  INSURANCE
+  WARRANTY
+  RECEIPT
+  CONTRACT
+  PROPERTY
+  SCHOOL
+  MEDICAL
+  FINANCIAL
+  OTHER
+
+  @@map("document_category")
+}
+
+// Polymorphic reference: validated per type against the household's own rows;
+// no FK (the target lives in an unrelated table).
+enum DocumentReferenceType {
+  MAINTENANCE
+  FINANCE_TRANSACTION
+  INVENTORY
+  FAMILY_MEMBER
+
+  @@map("document_reference_type")
+}
+
+enum IdeaStatus {
+  IDEA
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@map("idea_status")
+}
+
 model User {
   id                String    @id @default(cuid())
   // citext-style uniqueness: emails are normalized to lowercase in the
@@ -288,6 +369,16 @@ model User {
   financeBudgetsCreated   FinanceBudget[]               @relation("FinanceBudgetCreator")
   financeBillsCreated     FinanceBill[]                 @relation("FinanceBillCreator")
   financeRecurringCreated FinanceRecurringTransaction[] @relation("FinanceRecurringCreator")
+  familyMembersCreated    FamilyMember[]                @relation("FamilyMemberCreator")
+  familyLinkedMembers     FamilyMember[]                @relation("FamilyMemberLinkedUser")
+  familyEventsCreated     FamilyEvent[]                 @relation("FamilyEventCreator")
+  roomsCreated            Room[]                        @relation("RoomCreator")
+  cleaningCreated         CleaningDefinition[]          @relation("CleaningCreator")
+  laundryCreated          LaundryItem[]                 @relation("LaundryCreator")
+  maintenanceCreated      Maintenance[]                 @relation("MaintenanceCreator")
+  documentsUploaded       Document[]                    @relation("DocumentUploader")
+  notesCreated            Note[]                        @relation("NoteCreator")
+  ideasCreated            Idea[]                        @relation("IdeaCreator")
 
   @@map("users")
 }
@@ -337,6 +428,16 @@ model Household {
   financeBudgets        FinanceBudget[]
   financeBills          FinanceBill[]
   financeRecurring      FinanceRecurringTransaction[]
+  familyMembers         FamilyMember[]
+  familyEvents          FamilyEvent[]
+  rooms                 Room[]
+  cleaningDefinitions   CleaningDefinition[]
+  laundryItems          LaundryItem[]
+  maintenance           Maintenance[]
+  documents             Document[]
+  notes                 Note[]
+  noteTags              NoteTag[]
+  ideas                 Idea[]
 
   @@index([ownerUserId])
   @@map("households")
@@ -546,7 +647,16 @@ model Task {
   createdById  String  @map("created_by_id")
   // Optional assignee; must be a member of the same household.
   assignedToId String? @map("assigned_to_id")
-  categoryId   String? @map("category_id")
+  // Optional family-member assignee (a person who may not have an account);
+  // at most one of the two assignees is set (validated in the service).
+  assignedFamilyMemberId String? @map("assigned_family_member_id")
+  categoryId              String? @map("category_id")
+
+  // Which module generated this task. Head rows created by a cleaning
+  // definition, maintenance item or idea carry { sourceType, sourceId };
+  // occurrences and manual tasks keep MANUAL/NULL (unique per source).
+  sourceType TaskSourceType @default(MANUAL) @map("source_type")
+  sourceId   String?         @map("source_id")
 
   title       String
   description String?
@@ -567,17 +677,20 @@ model Task {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  household  Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  createdBy  User          @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  assignedTo User?         @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-  category   TaskCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  household             Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy             User                  @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  assignedTo            User?                 @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedFamilyMember  FamilyMember?         @relation(fields: [assignedFamilyMemberId], references: [id], onDelete: SetNull)
+  category              TaskCategory?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   series      Task?  @relation("TaskSeries", fields: [seriesId], references: [id], onDelete: Cascade)
   occurrences Task[] @relation("TaskSeries")
 
+  @@unique([sourceType, sourceId])
   @@index([householdId, status])
   @@index([householdId, dueAt])
   @@index([householdId, assignedToId])
+  @@index([householdId, assignedFamilyMemberId])
   @@index([householdId, createdAt])
   @@index([seriesId])
   @@map("tasks")
@@ -915,6 +1028,9 @@ model FinancialTransaction {
   recurring      FinanceRecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
   receipt        FinanceReceipt?
   paidBill       FinanceBill?
+  // Optional cost reference from a home-maintenance record (no FK back from
+  // money — maintenance points here and is SetNull on delete).
+  maintenance    Maintenance?
 
   // One generated transaction per occurrence date; NULLs (manual rows) are
   // unconstrained in PostgreSQL.
@@ -1049,4 +1165,293 @@ model FinanceRecurringTransaction {
   @@index([householdId, active])
   @@index([householdId, nextOccurrence])
   @@map("finance_recurring_transactions")
+}
+
+// ============================================================================
+// Phase 8 — family, home management, documents, notes, ideas
+// ============================================================================
+
+// A person in the household — may or may not have an app account (that is
+// HouseholdMember). Name/relationship are free text (extensible vocabulary,
+// normalized for duplicate detection); no gender or other sensitive data is
+// collected. Archiving keeps history (tasks/events stay attached).
+model FamilyMember {
+  id          String  @id @default(cuid())
+  householdId String  @map("household_id")
+  createdById String  @map("created_by_id")
+  name        String
+  // Lowercased name for case-insensitive uniqueness within the household.
+  normalized  String
+  // Free text: Wife, Husband, Child, Parent, Sibling, Other… (suggested by
+  // the client, never hardcoded in business logic).
+  relationship String
+  // Optional link to an authenticated household member (SetNull on unlink).
+  linkedUserId String? @map("linked_user_id")
+  dateOfBirth  DateTime? @map("date_of_birth") @db.Date
+  notes        String?
+  active       Boolean  @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household           Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy           User                  @relation("FamilyMemberCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  linkedUser          User?                 @relation("FamilyMemberLinkedUser", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  events              FamilyEvent[]
+  tasks               Task[]
+  cleaningDefinitions CleaningDefinition[]
+
+  @@unique([householdId, normalized])
+  @@index([householdId, active])
+  @@map("family_members")
+}
+
+// An important dated family occasion. Concrete dates (a graduation); opt into
+// `repeatsYearly` for anniversaries/school events — the calendar then expands
+// the day/month yearly inside the queried range. Birthdays are derived from
+// FamilyMember.dateOfBirth instead of duplicated here.
+model FamilyEvent {
+  id          String  @id @default(cuid())
+  householdId String  @map("household_id")
+  createdById String  @map("created_by_id")
+  memberId    String? @map("member_id")
+  title       String
+  // Free text kind: Birthday, Anniversary, Graduation, School event, Important.
+  kind        String
+  eventDate   DateTime @map("event_date") @db.Date
+  repeatsYearly Boolean @default(false) @map("repeats_yearly")
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User          @relation("FamilyEventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  member    FamilyMember? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, eventDate])
+  @@map("family_events")
+}
+
+// A physical room. Names are extensible and never hardcoded into business
+// logic; cleaning and maintenance reference rooms (Restrict / SetNull).
+model Room {
+  id          String  @id @default(cuid())
+  householdId String  @map("household_id")
+  createdById String  @map("created_by_id")
+  name        String
+  normalized  String
+  description String?
+  active      Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household     Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy     User                  @relation("RoomCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  cleaning      CleaningDefinition[]
+  maintenance   Maintenance[]
+
+  @@unique([householdId, normalized])
+  @@index([householdId, active])
+  @@map("rooms")
+}
+
+// The recurring cleaning *definition* (not a task list). Creating an active
+// definition generates a task series through the existing task recurrence
+// engine (Task { sourceType: CLEANING, sourceId }); pausing or deleting the
+// definition removes that generated series (docs/home-management.md).
+model CleaningDefinition {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+  roomId      String @map("room_id")
+  // Shown as the generated task title ("Clean kitchen").
+  title       String
+  frequency   CleaningFrequency
+  interval    Int            @default(1)
+  status      CleaningStatus @default(ACTIVE)
+  lastCompletedAt DateTime? @map("last_completed_at")
+  nextDueAt        DateTime? @map("next_due_at") @db.Date
+  // Optional family-member responsibility; propagated to the task series.
+  assignedFamilyMemberId String? @map("assigned_family_member_id")
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household             Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy             User           @relation("CleaningCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  room                  Room           @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  assignedFamilyMember  FamilyMember?  @relation(fields: [assignedFamilyMemberId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, status])
+  @@index([householdId, nextDueAt])
+  @@map("cleaning_definitions")
+}
+
+// Deliberately lightweight: one row per laundry batch. No inventory tracking.
+model LaundryItem {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+  // Free text type: Clothes, Bedding, Towels, Baby, Other…
+  category    String
+  status      LaundryStatus @default(PENDING)
+  scheduledDate DateTime? @map("scheduled_date") @db.Date
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("LaundryCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([householdId, status])
+  @@index([householdId, scheduledDate])
+  @@map("laundry_items")
+}
+
+// A home maintenance job. Integrates by reference only: optionally one task
+// (unique (MAINTENANCE, id) on tasks), a calendar item derived from
+// scheduledDate, and an optional link to an existing finance transaction —
+// money is never created automatically.
+model Maintenance {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+  roomId      String? @map("room_id")
+  title       String
+  description String?
+  // Free text category: Plumbing, Electrical, Appliance, Painting…
+  category    String
+  priority    TaskPriority      @default(MEDIUM)
+  status      MaintenanceStatus @default(OPEN)
+  scheduledDate DateTime       @map("scheduled_date") @db.Date
+  completedAt   DateTime?       @map("completed_at")
+  // Optional explicit expense reference (user links an existing transaction).
+  transactionId String? @unique @map("transaction_id")
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household   Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy   User               @relation("MaintenanceCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  room        Room?              @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  transaction FinancialTransaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, status])
+  @@index([householdId, scheduledDate])
+  @@map("home_maintenance")
+}
+
+// Private household file. Physical bytes live under uploads/documents/ under
+// a server-generated name (never the client's); served only through the
+// authenticated file endpoint. Expiry status (ACTIVE / EXPIRING_SOON /
+// EXPIRED) is derived at read time — never stored.
+model Document {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  uploadedById String @map("uploaded_by_id")
+  title       String
+  description String?
+  category    DocumentCategory @default(OTHER)
+  originalName String @map("original_name")
+  storedName   String @unique @map("stored_name")
+  mimeType     String @map("mime_type")
+  sizeBytes    Int    @map("size_bytes")
+  expiryDate   DateTime? @map("expiry_date") @db.Date
+  // Optional cross-module link (warranty, insurance, maintenance, invoice…).
+  referenceType DocumentReferenceType? @map("reference_type")
+  referenceId   String? @map("reference_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household  Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  uploadedBy User      @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([householdId, category])
+  @@index([householdId, expiryDate])
+  @@map("documents")
+}
+
+// General household reference notes — NOT diary entries (which are dated,
+// personal journals). Plain text only (rendered with textContent).
+model Note {
+  id          String  @id @default(cuid())
+  householdId String  @map("household_id")
+  createdById String  @map("created_by_id")
+  title       String
+  content     String
+  // Free text category: Household, Recipe ideas, School, Home, Personal…
+  category    String?
+  pinned      Boolean @default(false)
+  archived    Boolean @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User         @relation("NoteCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  tags      NoteTagLink[]
+
+  @@index([householdId, pinned, archived])
+  @@index([householdId, archived, updatedAt])
+  @@map("notes")
+}
+
+// Household tag vocabulary for notes (shared across members so filters work).
+model NoteTag {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  name        String
+  normalized  String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  household Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  notes     NoteTagLink[]
+
+  @@unique([householdId, normalized])
+  @@map("note_tags")
+}
+
+model NoteTagLink {
+  noteId String @map("note_id")
+  tagId  String @map("tag_id")
+
+  note Note    @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag  NoteTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+  @@map("note_tag_links")
+}
+
+// A lightweight idea / wishlist entry — not a project-management tool.
+// estimatedCost is informational only; purchases are recorded explicitly in
+// Finance. Optionally generates at most one task (unique (IDEA, id) on tasks).
+model Idea {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+  title       String
+  description String?
+  // Free text category: Home improvement, Things to buy, Travel…
+  category    String?
+  priority    TaskPriority @default(MEDIUM)
+  status      IdeaStatus   @default(IDEA)
+  estimatedCost Decimal?   @db.Decimal(14, 2)
+  currency    String       @default("SGD") @db.VarChar(3)
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("IdeaCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([householdId, status])
+  @@map("ideas")
 }

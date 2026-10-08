@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Family members and events in Housewife Diary.">
+  <title>Family — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Family">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Family</p>
+            <h1>Family</h1>
+            <p>Family members, birthdays, and important events.</p>
+          </div>
+          <div class="page-head__actions">
+            <a class="btn btn--primary" href="/pages/family-member-form.html">Add member</a>
+          </div>
+        </div>
+
+        <section class="card card--flat" aria-label="Filters">
+          <form id="family-filters" class="filter-grid" novalidate>
+            <div class="field">
+              <label for="filter-search">Search</label>
+              <input type="search" id="filter-search" name="search" maxlength="80" placeholder="Name or notes…">
+            </div>
+            <div class="field">
+              <label for="filter-archived">Include archived</label>
+              <select id="filter-archived" name="includeArchived">
+                <option value="false">Active only</option>
+                <option value="true">Include archived</option>
+              </select>
+            </div>
+            <div class="filter-grid__actions">
+              <button type="submit" class="btn btn--secondary btn--small">Apply</button>
+              <button type="button" class="btn btn--ghost btn--small" data-reset>Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <p id="family-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div data-member-list aria-live="polite"></div>
+
+        <nav class="pager" data-pager hidden aria-label="Member pages">
+          <button type="button" class="btn btn--secondary btn--small" data-page-prev>Previous</button>
+          <span class="pager__label" data-page-label></span>
+          <button type="button" class="btn btn--secondary btn--small" data-page-next>Next</button>
+        </nav>
+
+        <div class="divider"></div>
+
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Events</p>
+            <h2>Family events</h2>
+            <p>Birthdays, anniversaries, and other recurring dates.</p>
+          </div>
+          <div class="page-head__actions">
+            <a class="btn btn--primary" href="/pages/event-form.html?type=family">Add event</a>
+          </div>
+        </div>
+
+        <section class="card card--flat" aria-label="Event filters">
+          <form id="event-filters" class="filter-grid" novalidate>
+            <div class="field">
+              <label for="event-filter-from">From</label>
+              <input type="date" id="event-filter-from" name="from">
+            </div>
+            <div class="field">
+              <label for="event-filter-to">To</label>
+              <input type="date" id="event-filter-to" name="to">
+            </div>
+            <div class="field">
+              <label for="event-filter-member">Member</label>
+              <select id="event-filter-member" name="memberId">
+                <option value="">All members</option>
+              </select>
+            </div>
+            <div class="filter-grid__actions">
+              <button type="submit" class="btn btn--secondary btn--small">Apply</button>
+              <button type="button" class="btn btn--ghost btn--small" data-event-reset>Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <p id="event-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div data-event-list aria-live="polite"></div>
+
+        <nav class="pager" data-event-pager hidden aria-label="Event pages">
+          <button type="button" class="btn btn--secondary btn--small" data-event-page-prev>Previous</button>
+          <span class="pager__label" data-event-page-label></span>
+          <button type="button" class="btn btn--secondary btn--small" data-event-page-next>Next</button>
+        </nav>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/family.js"></script>
+</body>
+</html>

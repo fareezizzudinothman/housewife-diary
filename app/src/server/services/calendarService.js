@@ -5,6 +5,8 @@ import * as calendarRepository from '../repositories/calendarRepository.js';
 import * as taskRepository from '../repositories/taskRepository.js';
 import * as mealRepository from '../repositories/mealRepository.js';
 import * as financeRepository from '../repositories/financeRepository.js';
+import * as familyRepository from '../repositories/familyRepository.js';
+import * as homeRepository from '../repositories/homeRepository.js';
 import { toMealEventView } from './mealService.js';
 import { toBillEventView } from './financePlanningService.js';
 import { DAY_MS, occurrenceDates } from '../utils/recurrence.js';
@@ -86,6 +88,89 @@ function toTaskEventView(task, timezone) {
   };
 }
 
+// Family events are derived from the family module — never duplicated as
+// CalendarEvent rows. All-day, anchored to the stored event date.
+function toFamilyEventView(event) {
+  const startAt = event.eventDate;
+  return {
+    id: `family:${event.id}`,
+    sourceType: 'FAMILY',
+    sourceId: event.id,
+    title: event.title,
+    description: event.notes,
+    location: null,
+    startAt: startAt.toISOString(),
+    endAt: startAt.toISOString(),
+    allDay: true,
+    category: event.kind,
+    reminder: null,
+    recurrence: null,
+    recurring: event.repeatsYearly,
+    family: event.member ? { id: event.member.id, name: event.member.name } : null,
+    createdBy: null,
+    createdAt: event.createdAt,
+    updatedAt: event.updatedAt,
+  };
+}
+
+// Birthdays are derived from family members' dateOfBirth — one occurrence per
+// year inside the requested range. Feb 29 birthdays land on Feb 28 in
+// non-leap years.
+function toBirthdayView(member, year) {
+  const month = member.dateOfBirth.getUTCMonth();
+  const day = member.dateOfBirth.getUTCDate();
+  const isLeap = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  const safeDay = month === 1 && day === 29 && !isLeap(year) ? 28 : day;
+  const startAt = new Date(Date.UTC(year, month, safeDay));
+  return {
+    id: `birthday:${member.id}:${year}`,
+    sourceType: 'FAMILY',
+    sourceId: member.id,
+    title: `${member.name}'s birthday`,
+    description: null,
+    location: null,
+    startAt: startAt.toISOString(),
+    endAt: startAt.toISOString(),
+    allDay: true,
+    category: 'Birthday',
+    reminder: null,
+    recurrence: null,
+    recurring: true,
+    family: { id: member.id, name: member.name },
+    createdBy: null,
+    createdAt: member.createdAt,
+    updatedAt: member.updatedAt,
+  };
+}
+
+// Maintenance jobs with a scheduled date surface as read-only derived items.
+function toMaintenanceEventView(maintenance) {
+  const startAt = maintenance.scheduledDate;
+  return {
+    id: `maintenance:${maintenance.id}`,
+    sourceType: 'MAINTENANCE',
+    sourceId: maintenance.id,
+    title: maintenance.title,
+    description: maintenance.description,
+    location: null,
+    startAt: startAt.toISOString(),
+    endAt: startAt.toISOString(),
+    allDay: true,
+    category: maintenance.category,
+    reminder: null,
+    recurrence: null,
+    recurring: false,
+    maintenance: {
+      id: maintenance.id,
+      status: maintenance.status,
+      room: maintenance.room ? { id: maintenance.room.id, name: maintenance.room.name } : null,
+    },
+    createdBy: null,
+    createdAt: maintenance.createdAt,
+    updatedAt: maintenance.updatedAt,
+  };
+}
+
 function monthBounds(timezone, now) {
   const today = toDateString(now, timezone);
   const [year, month] = today.split('-').map(Number);
@@ -151,20 +236,24 @@ function assertRecurrenceEnd(recurrence, startAt, allDay, timezone) {
 export async function listEvents({ user, householdId, query }) {
   const range = resolveRange(user, query);
 
-  const [events, tasks, meals, bills] = await Promise.all([
-    calendarRepository.listEventsForRange(householdId, { from: range.from, to: range.to }),
-    taskRepository.listTasksDueBetween(householdId, range.from, range.to),
-    mealRepository.listRange(
-      householdId,
-      parseDateString(range.fromString),
-      parseDateString(range.toString),
-    ),
-    financeRepository.listBillsForCalendar(
-      householdId,
-      parseDateString(range.fromString),
-      parseDateString(range.toString),
-    ),
-  ]);
+  const [events, tasks, meals, bills, familyEvents, birthdayMembers, maintenance] =
+    await Promise.all([
+      calendarRepository.listEventsForRange(householdId, { from: range.from, to: range.to }),
+      taskRepository.listTasksDueBetween(householdId, range.from, range.to),
+      mealRepository.listRange(
+        householdId,
+        parseDateString(range.fromString),
+        parseDateString(range.toString),
+      ),
+      financeRepository.listBillsForCalendar(
+        householdId,
+        parseDateString(range.fromString),
+        parseDateString(range.toString),
+      ),
+      familyRepository.listEventsInRange(householdId, range.from, range.to),
+      familyRepository.listMembersWithBirthday(householdId),
+      homeRepository.listMaintenanceInRange(householdId, { from: range.from, to: range.to }),
+    ]);
 
   const items = [];
   for (const event of events) {
@@ -197,6 +286,19 @@ export async function listEvents({ user, householdId, query }) {
   }
   for (const bill of bills) {
     items.push(toBillEventView(bill, range.timezone));
+  }
+  for (const event of familyEvents) {
+    items.push(toFamilyEventView(event));
+  }
+  for (const member of birthdayMembers) {
+    const fromYear = range.from.getUTCFullYear();
+    const toYear = range.to.getUTCFullYear();
+    for (let year = fromYear; year <= toYear; year += 1) {
+      items.push(toBirthdayView(member, year));
+    }
+  }
+  for (const job of maintenance) {
+    items.push(toMaintenanceEventView(job));
   }
 
   items.sort(

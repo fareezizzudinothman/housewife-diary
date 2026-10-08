@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Upload or edit a document in Housewife Diary.">
+  <title>Document — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Document">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <div class="page-head">
+          <div class="page-head__text">
+            <a class="back-link" href="/pages/documents.html">
+              <span data-icon="chevron-left" data-icon-size="sm"></span>
+              Back to Documents
+            </a>
+            <h1 id="form-title">Upload document</h1>
+            <p>Files are encrypted and stored privately. Maximum 5 MB.</p>
+          </div>
+        </div>
+
+        <form id="document-form" class="form" novalidate>
+          <div id="file-section">
+            <div class="field">
+              <label for="file">File <span aria-hidden="true">*</span></label>
+              <input type="file" id="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+              <p class="field-hint">PDF, JPEG, PNG, or WebP. Max 5 MB.</p>
+            </div>
+          </div>
+
+          <div id="metadata-section" hidden>
+            <div class="field">
+              <label for="title">Title <span aria-hidden="true">*</span></label>
+              <input type="text" id="title" name="title" maxlength="120" required autocomplete="off" placeholder="Document title">
+            </div>
+
+            <div class="field">
+              <label for="description">Description</label>
+              <textarea id="description" name="description" maxlength="500" rows="3" placeholder="What is this document?"></textarea>
+            </div>
+
+            <div class="field">
+              <label for="category">Category</label>
+              <select id="category" name="category">
+                <option value="OTHER">Other</option>
+                <option value="INSURANCE">Insurance</option>
+                <option value="WARRANTY">Warranty</option>
+                <option value="RECEIPT">Receipt</option>
+                <option value="CONTRACT">Contract</option>
+                <option value="PROPERTY">Property</option>
+                <option value="SCHOOL">School</option>
+                <option value="MEDICAL">Medical</option>
+                <option value="FINANCIAL">Financial</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="expiryDate">Expiry date</label>
+              <input type="date" id="expiryDate" name="expiryDate">
+            </div>
+
+            <div class="field">
+              <label for="referenceType">Link to</label>
+              <select id="referenceType" name="referenceType">
+                <option value="">None</option>
+                <option value="MAINTENANCE">Maintenance</option>
+                <option value="FINANCE_TRANSACTION">Finance transaction</option>
+                <option value="INVENTORY">Inventory item</option>
+                <option value="FAMILY_MEMBER">Family member</option>
+              </select>
+            </div>
+
+            <div class="field" id="reference-id-field" hidden>
+              <label for="referenceId">Linked item</label>
+              <select id="referenceId" name="referenceId">
+                <option value="">Select an item</option>
+              </select>
+            </div>
+          </div>
+
+          <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" data-submit disabled>Upload</button>
+            <a class="btn btn--secondary" href="/pages/documents.html">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/document-form.js"></script>
+</body>
+</html>
