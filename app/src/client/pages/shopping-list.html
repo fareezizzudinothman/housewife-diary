@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A household shopping list in Housewife Diary.">
+  <title>Shopping list — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Shopping list">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <a class="back-link" href="/pages/shopping.html">← All lists</a>
+
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Kitchen</p>
+            <h1 data-list-name>Shopping list</h1>
+            <p data-list-subtitle>Loading…</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn--ghost btn--small" data-rename>Rename</button>
+            <button type="button" class="btn btn--ghost btn--small" data-archive>Archive</button>
+            <button type="button" class="btn btn--danger btn--small" data-delete>Delete</button>
+          </div>
+        </div>
+
+        <p id="list-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div data-list-notice></div>
+
+        <section class="card card--flat" aria-label="Add items">
+          <form id="item-add" class="form--inline" novalidate>
+            <div class="field">
+              <label for="item-name">Item</label>
+              <input type="text" id="item-name" name="name" maxlength="120" required autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="item-quantity">Qty</label>
+              <input type="number" id="item-quantity" name="quantity" min="0.001" step="0.001">
+            </div>
+            <div class="field">
+              <label for="item-unit">Unit</label>
+              <input type="text" id="item-unit" name="unit" maxlength="30" placeholder="kg, pcs…">
+            </div>
+            <div class="field">
+              <label for="item-category">Category</label>
+              <select id="item-category" name="category">
+                <option value="OTHER">Other</option>
+                <option value="PRODUCE">Produce</option>
+                <option value="MEAT">Meat</option>
+                <option value="SEAFOOD">Seafood</option>
+                <option value="DAIRY">Dairy</option>
+                <option value="PANTRY">Pantry</option>
+                <option value="FROZEN">Frozen</option>
+                <option value="DRINKS">Drinks</option>
+                <option value="HOUSEHOLD">Household</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn--primary btn--small">Add</button>
+          </form>
+          <div class="toolbar" style="margin-top: 0.8rem">
+            <button type="button" class="btn btn--secondary btn--small" data-from-recipe>Add a recipe</button>
+            <button type="button" class="btn btn--secondary btn--small" data-from-meals>Add the meal plan</button>
+          </div>
+        </section>
+
+        <div data-items aria-live="polite"></div>
+
+        <nav class="pager" data-pager hidden aria-label="Item pages">
+          <button type="button" class="btn btn--secondary btn--small" data-page-prev>Previous</button>
+          <span class="pager__label" data-page-label></span>
+          <button type="button" class="btn btn--secondary btn--small" data-page-next>Next</button>
+        </nav>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/shopping-list.js"></script>
+</body>
+</html>

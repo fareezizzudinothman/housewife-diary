@@ -92,3 +92,35 @@ export function normalizeSingleLine(value, maxLength) {
   const normalized = stripControlChars(value).replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
   return normalized.length >= 1 && normalized.length <= maxLength ? normalized : null;
 }
+
+// Display name + matching key for kitchen items (ingredients, shopping and
+// inventory rows). The normalized form is lowercased and whitespace-collapsed
+// so "Chicken  Breast" and "chicken breast" merge consistently.
+export function normalizeLookupName(value, maxLength) {
+  const name = normalizeSingleLine(value, maxLength);
+  return name === null ? null : { name, normalized: name.toLowerCase() };
+}
+
+// Normalized comparison key for units ('' when absent) so matching never
+// depends on letter case or stray whitespace.
+export function normalizeUnit(value, maxLength = 30) {
+  if (value === undefined || value === null || value === '') {
+    return { unit: null, unitKey: '' };
+  }
+  const unit = normalizeSingleLine(value, maxLength);
+  return unit === null ? null : { unit, unitKey: unit.toLowerCase() };
+}
+
+// Finite decimal (quantity) rounded to three decimal places; null when the
+// value is absent, non-numeric or out of range.
+export function parseDecimalQuantity(value, { min = 0, max = 1_000_000 } = {}) {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  const parsed = typeof value === 'number' ? value : Number(String(value).trim());
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  const rounded = Math.round(parsed * 1000) / 1000;
+  return rounded >= min && rounded <= max ? rounded : null;
+}

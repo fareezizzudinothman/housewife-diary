@@ -12,7 +12,7 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 | 3 | UI foundation and theme engine | **Complete** |
 | 4 | Dashboard and diary | **Complete** |
 | 5 | Tasks and calendar | **Complete** |
-| 6 | Meals, recipes, shopping, inventory | Planned |
+| 6 | Meals, recipes, shopping, inventory | **Complete** |
 | 7 | Finance, expenses, bills, budgets, reports | Planned |
 | 8 | Family, home management, home inventory, documents | Planned |
 | 9 | Notifications, PWA, backup, export | Planned |
@@ -129,10 +129,33 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 - `docker compose up -d --build` healthy; tasks/calendar/dashboard smoke-tested through the container; `/api/health` returns `success: true`.
 - Browser-verified with Playwright: task list + completion, task creation, calendar month view with derived task items, event creation, dashboard module links, no console/API errors, no horizontal overflow at 1360/820/375 px.
 
+## Phase 6 — Meals, recipes, shopping, inventory (delivered)
+
+**Scope:**
+
+- Fifth Prisma migration `meals_shopping_inventory`: `recipes`, `recipe_ingredients`, `meal_plan_entries`, `shopping_lists`, `shopping_list_items`, `inventory_items`, `inventory_transactions` (+ `meal_type`, `item_category`, `inventory_location`, `inventory_transaction_type` enums); all kitchen quantities are `Decimal(12,3)`.
+- Recipes module (full CRUD): structured ingredients, favourite/unfavourite, duplicate, search/category/favourite filters, sorting, pagination and category metadata.
+- Meals module: dated slots (`BREAKFAST|LUNCH|SNACK|DINNER`) referencing a recipe or free-text title; current-week defaults, ranged queries with a 90-day cap, and title snapshots when a recipe is deleted.
+- **Meal → calendar integration:** planned meals surface as derived all-day `sourceType: MEAL` items with nominal slot hours; derived ids are never persisted.
+- Shopping module: list CRUD/archive, item CRUD with purchase/unpurchase timestamps, search and filters, **recipe → shopping with serving scaling**, a deterministic merge strategy (normalized name + unit, unpurchased lines only), and **meal-plan preview + selectable commit**.
+- Inventory module: item CRUD, ledger-only quantity changes (`PURCHASE`/`CONSUME`/`WASTE`/`ADJUST`) with `quantityAfter`, negative-stock rejection, derived stock/expiry status (7-day horizon), filters and **shopping → inventory** merge with a `PURCHASE` transaction.
+- Dashboard: `meals`, `shopping`, `inventory` and `recipes` become real sections; only `finance` remains `not_available`.
+- Client: recipes list + form, weekly meal planner + form, shopping list index + detail, inventory list + item form with transaction history; Kitchen navigation group, bottom-nav update, new star/archive/minus icons and kitchen styles built on the existing theme tokens.
+- Tests: 44 new server tests (160 total) covering all four modules — CRUD/validation, isolation, scaling/merge rules, meal-plan preview/commit, ledger integrity, derived statuses and calendar integration.
+
+**Out of scope (intentionally deferred):** recipe photos/import; repeating meal plans/templates; per-meal servings; store organisation and price tracking on shopping lines; barcode scanning; automatic inventory deduction from cooked meals; reminder/expiry notification delivery (Phase 9); finance (Phase 7).
+
+**Design:** [recipes.md](recipes.md), [meals.md](meals.md), [shopping.md](shopping.md), [inventory.md](inventory.md), [api-design.md](api-design.md), [database-design.md](database-design.md).
+
+### Completion criteria (met)
+
+- `npm test` passes (160 tests) including the recipes, meals, shopping and inventory suites plus the extended dashboard kitchen contract.
+- Migration `meals_shopping_inventory` applied; `prisma migrate status` reports an up-to-date schema.
+- `docker compose up -d --build` healthy; `/api/health` returns `success: true`; recipes/meals/shopping/inventory/dashboard/calendar smoke-tested through the container.
+- Browser-verified with Playwright (9-step serial flow): register → recipe → meal → calendar, shopping list + item → purchase → shopping → inventory, inventory consume/low stock/expiry, recipe scaling, meal-plan → shopping, dashboard, no console/API errors, no horizontal overflow at 1360/1024/820/768/480/375 px.
+
 ## Later phases (summary scope)
 
-- **Phase 5:** tasks, categories, recurring tasks, calendar events. *(delivered above)*
-- **Phase 6:** meal planner, recipes, ingredients, shopping lists, pantry/inventory with transactions and low-stock alerts.
 - **Phase 7:** expenses, income, categories, budgets, bills, receipts, monthly reports.
 - **Phase 8:** family members/events, cleaning & house management, home assets/warranties, documents, notes, ideas.
 - **Phase 9:** notification center, PWA, backup/export.

@@ -11,7 +11,55 @@ import { getDashboard } from '../api/dashboard.js';
 
 const TIME_LABELS = { MORNING: 'Morning', AFTERNOON: 'Afternoon', EVENING: 'Evening' };
 
+function inventoryAlertCount(module) {
+  return (
+    (module.lowStockCount ?? 0) +
+    (module.outOfStockCount ?? 0) +
+    (module.expiringSoonCount ?? 0) +
+    (module.expiredCount ?? 0)
+  );
+}
+
 const MODULES = [
+  {
+    key: 'meals',
+    label: 'Meals',
+    iconName: 'utensils',
+    href: '/pages/meals.html',
+    meta: (module) =>
+      module.today.length
+        ? `${module.today.length} today`
+        : module.next
+          ? 'Planned'
+          : 'Plan the week',
+  },
+  {
+    key: 'shopping',
+    label: 'Shopping',
+    iconName: 'cart',
+    href: '/pages/shopping.html',
+    meta: (module) =>
+      module.activeList
+        ? `${module.activeList.remaining} left`
+        : 'No lists',
+  },
+  {
+    key: 'inventory',
+    label: 'Inventory',
+    iconName: 'package',
+    href: '/pages/inventory.html',
+    meta: (module) => {
+      const count = inventoryAlertCount(module);
+      return count ? `${count} ${count === 1 ? 'alert' : 'alerts'}` : 'All good';
+    },
+  },
+  {
+    key: 'recipes',
+    label: 'Recipes',
+    iconName: 'book',
+    href: '/pages/recipes.html',
+    meta: (module) => `${module.count ?? 0} saved`,
+  },
   {
     key: 'tasks',
     label: 'Tasks',
@@ -26,9 +74,6 @@ const MODULES = [
     href: '/pages/calendar.html',
     meta: (module) => `${module.upcomingCount ?? 0} this week`,
   },
-  { key: 'meals', label: 'Meals', iconName: 'utensils' },
-  { key: 'shopping', label: 'Shopping', iconName: 'cart' },
-  { key: 'inventory', label: 'Inventory', iconName: 'package' },
   { key: 'finance', label: 'Finance', iconName: 'wallet' },
 ];
 
@@ -59,11 +104,13 @@ function formatDate(isoDate) {
 function renderStats(dashboard) {
   const container = document.querySelector('[data-stats]');
   const dueToday = dashboard.tasks?.dueTodayCount ?? 0;
+  const alerts = inventoryAlertCount(dashboard.inventory ?? {});
+  const shopping = dashboard.shopping ?? {};
   const stats = [
     { label: 'Open tasks', value: String(dashboard.tasks?.openCount ?? 0), meta: dueToday > 0 ? `${dueToday} due today` : 'Nothing due today' },
+    { label: 'Shopping left', value: String(shopping.activeList?.remaining ?? 0), meta: shopping.activeList?.name ?? 'No active list' },
+    { label: 'Stock alerts', value: String(alerts), meta: alerts > 0 ? 'Needs attention' : 'All good' },
     { label: 'Diary entries', value: String(dashboard.diary.count), meta: dashboard.diary.status === 'empty' ? 'Start writing' : 'Written so far' },
-    { label: 'Members', value: String(dashboard.household?.memberCount ?? 0), meta: dashboard.household?.name ?? 'No household' },
-    { label: 'Your role', value: dashboard.household?.role ?? '—', meta: 'In the active household' },
   ];
   container.innerHTML = stats
     .map(
@@ -76,7 +123,7 @@ function renderStats(dashboard) {
       </div>`,
     )
     .join('');
-  const icons = ['list-checks', 'book', 'users', 'user'];
+  const icons = ['list-checks', 'cart', 'package', 'book'];
   const tiles = container.querySelectorAll('.stat-tile');
   stats.forEach((stat, index) => {
     const tile = tiles[index];
@@ -130,6 +177,105 @@ function renderDiaryPanel(diary) {
     timeline.append(item);
   }
   panel.replaceChildren(timeline);
+}
+
+const MEAL_LABELS = {
+  BREAKFAST: 'Breakfast',
+  LUNCH: 'Lunch',
+  DINNER: 'Dinner',
+  SNACK: 'Snack',
+};
+
+const ALERT_LABELS = {
+  EXPIRED: 'Expired',
+  OUT_OF_STOCK: 'Out of stock',
+  EXPIRING_SOON: 'Expiring soon',
+  LOW_STOCK: 'Low stock',
+};
+
+function sectionDivider() {
+  const divider = document.createElement('div');
+  divider.className = 'divider';
+  return divider;
+}
+
+function sectionHeading(text) {
+  const heading = document.createElement('p');
+  heading.className = 'timeline__slot';
+  heading.textContent = text;
+  return heading;
+}
+
+function mutedLine(text) {
+  const line = document.createElement('p');
+  line.className = 'muted';
+  line.textContent = text;
+  return line;
+}
+
+// The "Today" card keeps meals, shopping and stock alerts together so the
+// dashboard stays four calm cards instead of a wall of panels.
+function renderToday(dashboard) {
+  const panel = document.querySelector('[data-today-panel]');
+  panel.replaceChildren();
+
+  panel.append(sectionHeading('Meals today'));
+  if (dashboard.meals.today.length) {
+    for (const meal of dashboard.meals.today) {
+      const row = document.createElement('div');
+      row.className = 'kv-row';
+      const term = document.createElement('dt');
+      term.textContent = MEAL_LABELS[meal.mealType] ?? meal.mealType;
+      const value = document.createElement('dd');
+      value.textContent = meal.displayTitle;
+      row.append(term, value);
+      panel.append(row);
+    }
+  } else if (dashboard.meals.next) {
+    panel.append(
+      mutedLine(
+        `Next: ${MEAL_LABELS[dashboard.meals.next.mealType] ?? ''} ${formatDate(dashboard.meals.next.date)} — ${dashboard.meals.next.displayTitle}`.trim(),
+      ),
+    );
+  } else {
+    panel.append(mutedLine('Nothing planned yet.'));
+  }
+
+  panel.append(sectionDivider());
+  panel.append(sectionHeading('Shopping'));
+  if (dashboard.shopping.activeList) {
+    const list = dashboard.shopping.activeList;
+    panel.append(
+      mutedLine(
+        list.remaining === 0
+          ? `“${list.name}” — all ${list.itemCount} items bought`
+          : `“${list.name}” — ${list.remaining} of ${list.itemCount} left`,
+      ),
+    );
+    const link = document.createElement('a');
+    link.className = 'btn btn--ghost btn--small';
+    link.href = `/pages/shopping-list.html?id=${encodeURIComponent(list.id)}`;
+    link.textContent = 'Open list';
+    panel.append(link);
+  } else {
+    panel.append(mutedLine('No active list.'));
+  }
+
+  panel.append(sectionDivider());
+  panel.append(sectionHeading('Inventory'));
+  const alerts = dashboard.inventory.alerts ?? [];
+  if (alerts.length) {
+    for (const alert of alerts) {
+      const line = document.createElement('p');
+      line.className = 'meta-text';
+      const label = ALERT_LABELS[alert.expiryStatus] ?? ALERT_LABELS[alert.status] ?? '';
+      const expiry = alert.expiresAt ? ` · expires ${formatDate(alert.expiresAt)}` : '';
+      line.textContent = `${alert.name} — ${label}${expiry}`;
+      panel.append(line);
+    }
+  } else {
+    panel.append(mutedLine('Stock looks good.'));
+  }
 }
 
 function renderHouseholdFacts(dashboard) {
@@ -194,6 +340,7 @@ function renderNoHouseholdNotice() {
       overview will appear here. <a href="/pages/household.html">Set up a household</a>
     </div>`;
   document.querySelector('[data-stats]').innerHTML = '';
+  document.querySelector('[data-today-panel]').innerHTML = '';
 }
 
 async function init() {
@@ -205,6 +352,8 @@ async function init() {
 
   const panel = document.querySelector('[data-diary-panel]');
   panel.innerHTML = loadingState('Loading your dashboard…');
+  const todayPanel = document.querySelector('[data-today-panel]');
+  todayPanel.innerHTML = loadingState('Loading today…');
 
   let dashboard;
   try {
@@ -226,6 +375,7 @@ async function init() {
       : 'Your home at a glance.';
 
   renderStats(dashboard);
+  renderToday(dashboard);
   renderDiaryPanel(dashboard.diary);
   renderHouseholdFacts(dashboard);
   renderModules(dashboard);

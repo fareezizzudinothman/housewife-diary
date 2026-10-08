@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Household inventory in Housewife Diary.">
+  <title>Inventory — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Inventory">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Kitchen</p>
+            <h1>Inventory</h1>
+            <p>What is at home, where it lives, and what runs low.</p>
+          </div>
+          <div class="page-head__actions">
+            <a class="btn btn--primary" href="/pages/inventory-form.html">New item</a>
+          </div>
+        </div>
+
+        <section class="card card--flat" aria-label="Filters">
+          <form id="inventory-filters" class="filter-grid" novalidate>
+            <div class="field">
+              <label for="filter-search">Search</label>
+              <input type="search" id="filter-search" name="search" maxlength="100" placeholder="Item name…">
+            </div>
+            <div class="field">
+              <label for="filter-category">Category</label>
+              <select id="filter-category" name="category">
+                <option value="">All categories</option>
+                <option value="PRODUCE">Produce</option>
+                <option value="MEAT">Meat</option>
+                <option value="SEAFOOD">Seafood</option>
+                <option value="DAIRY">Dairy</option>
+                <option value="PANTRY">Pantry</option>
+                <option value="FROZEN">Frozen</option>
+                <option value="DRINKS">Drinks</option>
+                <option value="HOUSEHOLD">Household</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-location">Location</label>
+              <select id="filter-location" name="location">
+                <option value="">Anywhere</option>
+                <option value="PANTRY">Pantry</option>
+                <option value="REFRIGERATOR">Refrigerator</option>
+                <option value="FREEZER">Freezer</option>
+                <option value="HOUSEHOLD">Household</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-stock">Stock</label>
+              <select id="filter-stock" name="stock">
+                <option value="">Any stock</option>
+                <option value="in_stock">In stock</option>
+                <option value="low_stock">Low stock</option>
+                <option value="out_of_stock">Out of stock</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-expiry">Expiry</label>
+              <select id="filter-expiry" name="expiry">
+                <option value="">Any expiry</option>
+                <option value="expiring_soon">Expiring soon</option>
+                <option value="expired">Expired</option>
+                <option value="none">No expiry date</option>
+              </select>
+            </div>
+            <div class="filter-grid__actions">
+              <button type="submit" class="btn btn--secondary btn--small">Apply</button>
+              <button type="button" class="btn btn--ghost btn--small" data-reset>Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <p id="inventory-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div data-inventory-list aria-live="polite"></div>
+
+        <nav class="pager" data-pager hidden aria-label="Inventory pages">
+          <button type="button" class="btn btn--secondary btn--small" data-page-prev>Previous</button>
+          <span class="pager__label" data-page-label></span>
+          <button type="button" class="btn btn--secondary btn--small" data-page-next>Next</button>
+        </nav>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/inventory.js"></script>
+</body>
+</html>

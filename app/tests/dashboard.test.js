@@ -39,7 +39,7 @@ async function createHousehold(client, name = 'Dashboard Home') {
   return response.body.data;
 }
 
-const FUTURE_MODULES = ['meals', 'shopping', 'inventory', 'finance'];
+const FUTURE_MODULES = ['finance'];
 
 test('dashboard requires authentication', async () => {
   const anonymous = newClient(baseUrl);
@@ -56,7 +56,7 @@ test('dashboard is forbidden without an active household', async () => {
   assert.match(response.body.error.message, /household/i);
 });
 
-test('empty household reports diary empty and future modules as not_available', async () => {
+test('empty household reports every built module as empty and finance as not_available', async () => {
   const owner = await createUser('empty');
   const created = await createHousehold(owner.client, 'Quiet House');
 
@@ -83,10 +83,87 @@ test('empty household reports diary empty and future modules as not_available', 
     recent: [],
   });
   assert.deepEqual(dashboard.calendar, { status: 'empty', upcomingCount: 0, next: [] });
+  assert.deepEqual(dashboard.meals, { status: 'empty', today: [], next: null });
+  assert.deepEqual(dashboard.shopping, { status: 'empty', activeList: null });
+  assert.deepEqual(dashboard.recipes, { status: 'empty', count: 0, favourites: [] });
+  assert.deepEqual(dashboard.inventory, {
+    status: 'empty',
+    lowStockCount: 0,
+    outOfStockCount: 0,
+    expiringSoonCount: 0,
+    expiredCount: 0,
+    alerts: [],
+  });
 
   for (const moduleName of FUTURE_MODULES) {
     assert.deepEqual(dashboard[moduleName], { status: 'not_available' });
   }
+});
+
+test('dashboard summarises meals, shopping, inventory and recipes', async () => {
+  const owner = await createUser('kitchen');
+  await createHousehold(owner.client);
+
+  const today = new Date();
+  const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const tomorrow = new Date(today.getTime() + 86_400_000);
+  const tomorrowString = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+  const recipeResponse = await owner.client.post('/api/recipes', {
+    title: 'Chicken Curry',
+    servings: 4,
+    ingredients: [{ name: 'Chicken', quantity: 1, unit: 'kg' }],
+  });
+  assert.equal(recipeResponse.status, 201, JSON.stringify(recipeResponse.body));
+  const recipe = recipeResponse.body.data.recipe;
+  await owner.client.post(`/api/recipes/${recipe.id}/favourite`, {});
+
+  const meal = await owner.client.post('/api/meals', {
+    date: todayString,
+    mealType: 'DINNER',
+    recipeId: recipe.id,
+  });
+  assert.equal(meal.status, 201, JSON.stringify(meal.body));
+  const nextMeal = await owner.client.post('/api/meals', {
+    date: tomorrowString,
+    mealType: 'BREAKFAST',
+    title: 'Porridge',
+  });
+  assert.equal(nextMeal.status, 201, JSON.stringify(nextMeal.body));
+
+  const list = await owner.client.post('/api/shopping-lists', { name: 'Weekly' });
+  const listId = list.body.data.list.id;
+  await owner.client.post(`/api/shopping-lists/${listId}/items`, { name: 'Milk', quantity: 2 });
+
+  const item = await owner.client.post('/api/inventory', {
+    name: 'Yogurt',
+    quantity: 0,
+    unit: 'cups',
+    minimumQuantity: 1,
+  });
+  assert.equal(item.status, 201, JSON.stringify(item.body));
+
+  const response = await owner.client.get('/api/dashboard');
+  assert.equal(response.status, 200);
+  const dashboard = response.body.data;
+
+  assert.equal(dashboard.meals.status, 'available');
+  assert.equal(dashboard.meals.today.length, 1);
+  assert.equal(dashboard.meals.today[0].displayTitle, 'Chicken Curry');
+  assert.equal(dashboard.meals.next.displayTitle, 'Porridge');
+
+  assert.equal(dashboard.shopping.status, 'available');
+  assert.equal(dashboard.shopping.activeList.name, 'Weekly');
+  assert.equal(dashboard.shopping.activeList.itemCount, 1);
+  assert.equal(dashboard.shopping.activeList.remaining, 1);
+
+  assert.equal(dashboard.inventory.status, 'available');
+  assert.equal(dashboard.inventory.outOfStockCount, 1);
+  assert.equal(dashboard.inventory.alerts[0].name, 'Yogurt');
+
+  assert.equal(dashboard.recipes.status, 'available');
+  assert.equal(dashboard.recipes.count, 1);
+  assert.deepEqual(dashboard.recipes.favourites, [{ id: recipe.id, title: 'Chicken Curry' }]);
 });
 
 test('dashboard summarises open tasks and upcoming calendar events', async () => {

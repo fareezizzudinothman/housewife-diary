@@ -8,6 +8,10 @@ import diaryRoutes from './diary.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import tasksRoutes from './tasks.routes.js';
 import calendarRoutes from './calendar.routes.js';
+import recipesRoutes from './recipes.routes.js';
+import mealsRoutes from './meals.routes.js';
+import shoppingRoutes from './shopping.routes.js';
+import inventoryRoutes from './inventory.routes.js';
 
 const router = Router();
 
@@ -20,5 +24,9 @@ router.use('/diary', diaryRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/tasks', tasksRoutes);
 router.use('/calendar', calendarRoutes);
+router.use('/recipes', recipesRoutes);
+router.use('/meals', mealsRoutes);
+router.use('/shopping-lists', shoppingRoutes);
+router.use('/inventory', inventoryRoutes);
 
 export default router;

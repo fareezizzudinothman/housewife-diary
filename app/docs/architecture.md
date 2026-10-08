@@ -73,6 +73,30 @@ Themes are pure CSS variable sets applied via `data-*` attributes on `<html>` pl
 - **Attachments** are stored as files under `app/uploads/diary/` (Docker volume) with metadata rows in `diary_attachments`. Uploads arrive as raw binary bodies (no multipart dependency), are sniffed by magic bytes, and are only ever served back through authenticated streaming endpoints — never as static files. Full design: [diary.md](diary.md).
 - **Client pages** (`dashboard`, `diary`, `diary-entry`, `diary-form`) are plain HTML + page controllers under `js/pages/`, using the shared shell, components and `js/api` transport.
 
+## Kitchen flow (Phase 6)
+
+Recipes, meals, shopping and inventory form one connected flow, each module still following the standard layering (`validators → repositories → services → controllers → routes`):
+
+```text
+Recipe (structured ingredients)
+   │  attach to a planned meal
+   ▼
+Meal plan entry ──► calendar (derived, all-day sourceType: MEAL items)
+   │  preview aggregation            │  add with serving scaling
+   ▼                                 ▼
+Shopping list items ◄────────────────┘
+   │  explicit per-item action (records a PURCHASE transaction)
+   ▼
+Inventory item + quantity ledger (derived stock/expiry status → dashboard alerts)
+```
+
+- **Shared kitchen vocabulary** (`validators/kitchen.js`): meal types, item categories, inventory locations, units and `Decimal(12,3)` quantity parsing/normalization exist in exactly one place.
+- **Matching key:** every ingredient/line/item stores a normalized (lowercased, whitespace-collapsed) name; recipe → shopping and shopping → inventory merge only on equal normalized name **and** unit (case-insensitive). Units are never converted.
+- **Derived, never stored:** calendar `MEAL` items, meal `displayTitle`, shopping merge results, inventory stock/expiry statuses and dashboard alerts are computed per request.
+- **Ledger discipline:** inventory quantity changes only through transaction endpoints (`PURCHASE`/`CONSUME`/`WASTE`/`ADJUST`); a direct `PATCH` of `quantity` is rejected, so every balance is reconstructible from `inventory_transactions.quantity_after`.
+- **Cross-module ownership:** all four modules are household-scoped from the session; recipe/meal ids from another household resolve to `404` and can never be referenced into a list.
+- Full designs: [recipes.md](recipes.md), [meals.md](meals.md), [shopping.md](shopping.md), [inventory.md](inventory.md).
+
 ## AI assistant (Phase 10)
 
 The assistant never receives database access. It sits above a tool layer of allow-listed, household-scoped functions (`getTasks`, `createMeal`, `analyseExpenses`, …) that call the same application services used by the REST API, so authentication and household isolation apply automatically. See [ai-architecture.md](ai-architecture.md).

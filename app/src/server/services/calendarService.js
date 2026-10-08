@@ -3,6 +3,8 @@ import { fieldError, throwValidationError } from '../validators/shared.js';
 import { parseDateString } from '../validators/format.js';
 import * as calendarRepository from '../repositories/calendarRepository.js';
 import * as taskRepository from '../repositories/taskRepository.js';
+import * as mealRepository from '../repositories/mealRepository.js';
+import { toMealEventView } from './mealService.js';
 import { DAY_MS, occurrenceDates } from '../utils/recurrence.js';
 import {
   endOfDayFromString,
@@ -147,9 +149,14 @@ function assertRecurrenceEnd(recurrence, startAt, allDay, timezone) {
 export async function listEvents({ user, householdId, query }) {
   const range = resolveRange(user, query);
 
-  const [events, tasks] = await Promise.all([
+  const [events, tasks, meals] = await Promise.all([
     calendarRepository.listEventsForRange(householdId, { from: range.from, to: range.to }),
     taskRepository.listTasksDueBetween(householdId, range.from, range.to),
+    mealRepository.listRange(
+      householdId,
+      parseDateString(range.fromString),
+      parseDateString(range.toString),
+    ),
   ]);
 
   const items = [];
@@ -178,9 +185,13 @@ export async function listEvents({ user, householdId, query }) {
   for (const task of tasks) {
     items.push(toTaskEventView(task, range.timezone));
   }
+  for (const meal of meals) {
+    items.push(toMealEventView(meal, range.timezone));
+  }
 
   items.sort(
-    (a, b) => a.startAt.localeCompare(b.startAt) || a.title.localeCompare(b.title),
+    (a, b) =>
+      a.startAt.localeCompare(b.startAt) || (a.title ?? '').localeCompare(b.title ?? ''),
   );
 
   return {

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Weekly meal planning in Housewife Diary.">
+  <title>Meals — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Meals">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Kitchen</p>
+            <h1>Meal plan</h1>
+            <p>Plan the week with recipes; ingredients can flow into shopping.</p>
+          </div>
+          <div class="page-head__actions">
+            <a class="btn btn--primary" data-new-meal href="/pages/meal-form.html">Plan a meal</a>
+          </div>
+        </div>
+
+        <p id="meal-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <section class="card" aria-label="Week plan">
+          <div class="planner__head">
+            <span class="planner__title" data-week-label>Week</span>
+            <div class="item-actions">
+              <button type="button" class="icon-btn" data-prev aria-label="Previous week">
+                <span data-icon="chevron-left"></span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--small" data-today>Today</button>
+              <button type="button" class="icon-btn" data-next aria-label="Next week">
+                <span data-icon="chevron-right"></span>
+              </button>
+            </div>
+          </div>
+          <div class="planner__grid" data-planner aria-live="polite"></div>
+        </section>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/meals.js"></script>
+</body>
+</html>

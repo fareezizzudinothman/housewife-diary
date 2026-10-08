@@ -2,12 +2,12 @@
 
 A warm, modern household management web application — a personal digital household companion for diary, tasks, meals, shopping, inventory, finances, family and home.
 
-> **Status:** Phase 0–5 (architecture + foundation + authentication/household management + UI foundation/theme engine + dashboard/diary + tasks/calendar) complete.
-> The API server, PostgreSQL and Prisma are connected and verified; users can register, sign in, manage households, customize the app's appearance (nine themes, light/dark/system modes), read their dashboard, write diary entries with photos, and plan tasks and calendar events together. Remaining modules arrive phase by phase — see [docs/implementation-plan.md](docs/implementation-plan.md).
+> **Status:** Phase 0–6 (architecture + foundation + authentication/household management + UI foundation/theme engine + dashboard/diary + tasks/calendar + meals/recipes/shopping/inventory) complete.
+> The API server, PostgreSQL and Prisma are connected and verified; users can register, sign in, manage households, customize the app's appearance (nine themes, light/dark/system modes), read their dashboard, write diary entries with photos, plan tasks and calendar events, keep recipes with structured ingredients, plan meals, run shopping lists (including recipe/meal-plan import) and track pantry inventory with a full stock ledger. Remaining modules arrive phase by phase — see [docs/implementation-plan.md](docs/implementation-plan.md).
 
 ## Modules
 
-**Delivered:** authentication and household management, appearance/themes, dashboard (real aggregation — no mock data), diary (timeline, search and filters, moods, tags, photo attachments), tasks (categories, assignment, views, recurring tasks) and calendar (all-day/timed events, ranged month view, task-derived items).
+**Delivered:** authentication and household management, appearance/themes, dashboard (real aggregation — no mock data), diary (timeline, search and filters, moods, tags, photo attachments), tasks (categories, assignment, views, recurring tasks), calendar (all-day/timed events, ranged month view, task-derived items), and the kitchen flow — recipes with structured ingredients, weekly meal planner (with calendar integration), shopping lists (recipe scaling, meal-plan import, purchase tracking, shopping → inventory) and household inventory (transaction ledger, derived stock/expiry status, low-stock alerts).
 
 **Planned (phase by phase):**
 
@@ -15,7 +15,6 @@ A warm, modern household management web application — a personal digital house
 | --- | --- |
 | Personal | Diary, mood tracking, notes, ideas, documents |
 | Household | Tasks, recurring tasks, calendar, cleaning, laundry, maintenance |
-| Food | Meal planner, recipes, shopping lists, pantry/inventory |
 | Money | Expenses, income, budgets, bills, receipts, reports |
 | People | Family members, family events, household roles |
 | Home | Home inventory, appliances, warranties |
@@ -191,6 +190,10 @@ docker compose down
 - [Diary module](docs/diary.md)
 - [Tasks module](docs/tasks.md)
 - [Calendar module](docs/calendar.md)
+- [Recipes module](docs/recipes.md)
+- [Meals module](docs/meals.md)
+- [Shopping module](docs/shopping.md)
+- [Inventory module](docs/inventory.md)
 - [Theme system and UI design system](docs/theme-system.md)
 - [Development workflow](docs/development-workflow.md)
 - [AI architecture (Phase 10 plan)](docs/ai-architecture.md)
@@ -205,7 +208,7 @@ docker compose down
 | 3 | UI foundation and theme engine | Complete |
 | 4 | Dashboard and diary | Complete |
 | 5 | Tasks and calendar | Complete |
-| 6 | Meals, recipes, shopping, inventory | Planned |
+| 6 | Meals, recipes, shopping, inventory | Complete |
 | 7 | Finance, bills, budgets, reports | Planned |
 | 8 | Family, home management, home inventory, documents | Planned |
 | 9 | Notifications, PWA, backup/export | Planned |
