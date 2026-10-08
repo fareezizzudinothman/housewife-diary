@@ -39,7 +39,7 @@ async function createHousehold(client, name = 'Dashboard Home') {
   return response.body.data;
 }
 
-const FUTURE_MODULES = ['finance'];
+const FUTURE_MODULES = [];
 
 test('dashboard requires authentication', async () => {
   const anonymous = newClient(baseUrl);
@@ -56,7 +56,7 @@ test('dashboard is forbidden without an active household', async () => {
   assert.match(response.body.error.message, /household/i);
 });
 
-test('empty household reports every built module as empty and finance as not_available', async () => {
+test('empty household reports every built module as empty', async () => {
   const owner = await createUser('empty');
   const created = await createHousehold(owner.client, 'Quiet House');
 
@@ -93,6 +93,18 @@ test('empty household reports every built module as empty and finance as not_ava
     expiringSoonCount: 0,
     expiredCount: 0,
     alerts: [],
+  });
+  assert.deepEqual(dashboard.finance, {
+    status: 'empty',
+    currency: 'SGD',
+    year: new Date().getUTCFullYear(),
+    month: new Date().getUTCMonth() + 1,
+    income: '0.00',
+    expenses: '0.00',
+    net: '0.00',
+    budgets: { count: 0, amount: '0.00', spent: '0.00', percentUsed: null },
+    overdueBillCount: 0,
+    upcomingBills: [],
   });
 
   for (const moduleName of FUTURE_MODULES) {
