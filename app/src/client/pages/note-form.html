@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Add or edit a note in Housewife Diary.">
+  <title>Note — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Note">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <div class="page-head">
+          <div class="page-head__text">
+            <a class="back-link" href="/pages/notes.html">
+              <span data-icon="chevron-left" data-icon-size="sm"></span>
+              Back to Notes
+            </a>
+            <h1 id="form-title">New note</h1>
+            <p>Plain text notes with tags, pinning, and archiving.</p>
+          </div>
+        </div>
+
+        <form id="note-form" class="form" novalidate>
+          <div class="field">
+            <label for="title">Title <span aria-hidden="true">*</span></label>
+            <input type="text" id="title" name="title" maxlength="200" required autocomplete="off" placeholder="Note title">
+          </div>
+
+          <div class="field">
+            <label for="content">Content <span aria-hidden="true">*</span></label>
+            <textarea id="content" name="content" maxlength="20000" rows="12" required placeholder="Write your note here…"></textarea>
+            <p class="field-hint">Plain text. URLs and line breaks are preserved.</p>
+          </div>
+
+          <div class="field">
+            <label for="category">Category</label>
+            <input type="text" id="category" name="category" maxlength="100" placeholder="Optional category" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="tags">Tags</label>
+            <input type="text" id="tags" name="tags" maxlength="400" placeholder="Comma-separated tags (e.g. home, recipes, ideas)">
+            <p class="field-hint">Press Enter or comma to add tags. Max 10 tags, 40 chars each.</p>
+            <div id="tag-chips" class="mood-picker" style="margin-top: 0.5rem;"></div>
+          </div>
+
+          <div class="field field--check">
+            <input type="checkbox" id="pinned" name="pinned">
+            <label for="pinned">Pin to top</label>
+          </div>
+
+          <div class="field field--check">
+            <input type="checkbox" id="archived" name="archived">
+            <label for="archived">Archive</label>
+          </div>
+
+          <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" data-submit>Save</button>
+            <a class="btn btn--secondary" href="/pages/notes.html">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/note-form.js"></script>
+</body>
+</html>

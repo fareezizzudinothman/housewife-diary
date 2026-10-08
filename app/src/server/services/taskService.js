@@ -2,6 +2,7 @@ import { AppError, ErrorCodes } from '../../shared/errors.js';
 import { fieldError, throwValidationError } from '../validators/shared.js';
 import * as taskRepository from '../repositories/taskRepository.js';
 import * as householdMemberRepository from '../repositories/householdMemberRepository.js';
+import * as familyRepository from '../repositories/familyRepository.js';
 import {
   DAY_MS,
   MAX_EXTENSION_STEPS,
@@ -44,6 +45,13 @@ function toTaskView(task) {
     completedAt: task.completedAt ? task.completedAt.toISOString() : null,
     category: task.category ? { id: task.category.id, name: task.category.name } : null,
     assignee: task.assignedTo ? { id: task.assignedTo.id, name: task.assignedTo.name } : null,
+    familyAssignee: task.assignedFamilyMember
+      ? { id: task.assignedFamilyMember.id, name: task.assignedFamilyMember.name }
+      : null,
+    source: task.sourceType === 'MANUAL' && !task.sourceId ? null : {
+      type: task.sourceType,
+      id: task.sourceId ?? null,
+    },
     createdBy: task.createdBy ? { id: task.createdBy.id, name: task.createdBy.name } : null,
     recurrence: normalizeRecurrence(task.recurrence),
     seriesId: task.seriesId,
@@ -88,6 +96,31 @@ async function assertAssignee(assignedToId, householdId) {
   return assignedToId;
 }
 
+async function assertFamilyAssignee(assignedFamilyMemberId, householdId) {
+  if (assignedFamilyMemberId === null || assignedFamilyMemberId === undefined) {
+    return null;
+  }
+  const member = await familyRepository.findMemberById(assignedFamilyMemberId, householdId);
+  if (!member || !member.active) {
+    throwValidationError([
+      fieldError('assignedFamilyMemberId', 'Choose an active family member.'),
+    ]);
+  }
+  return assignedFamilyMemberId;
+}
+
+// A task can be assigned to an app user OR a family member, never both.
+function assertSingleAssigner(assignedToId, assignedFamilyMemberId) {
+  if (assignedToId && assignedFamilyMemberId) {
+    throwValidationError([
+      fieldError(
+        'assignedFamilyMemberId',
+        'Assign the task to either a member or a family member, not both.',
+      ),
+    ]);
+  }
+}
+
 // The recurrence rule's endDate is a calendar date; it may not precede the
 // day the series starts on.
 function assertRecurrenceEnd(recurrence, startAt, timezone) {
@@ -111,6 +144,7 @@ function occurrenceRow(head, dueAt) {
     householdId: head.householdId,
     createdById: head.createdById,
     assignedToId: head.assignedToId ?? null,
+    assignedFamilyMemberId: head.assignedFamilyMemberId ?? null,
     categoryId: head.categoryId ?? null,
     title: head.title,
     description: head.description ?? null,
@@ -119,6 +153,9 @@ function occurrenceRow(head, dueAt) {
     dueAt,
     completedAt: null,
     recurrence: null,
+    // Occurrences are plain rows — provenance lives on the head only.
+    sourceType: 'MANUAL',
+    sourceId: null,
   };
 }
 
@@ -238,17 +275,23 @@ export async function getTask({ householdId, id }) {
   return toTaskView(task);
 }
 
-export async function createTask({ user, householdId, data }) {
+export async function createTask({ user, householdId, data, source = null }) {
   const timezone = user.timezone ?? 'UTC';
   const dueAt = resolveDue(data, timezone);
   const categoryId = await assertCategory(data.categoryId, householdId);
   const assignedToId = await assertAssignee(data.assignedToId, householdId);
+  const assignedFamilyMemberId = await assertFamilyAssignee(
+    data.assignedFamilyMemberId,
+    householdId,
+  );
+  assertSingleAssigner(assignedToId, assignedFamilyMemberId);
   assertRecurrenceEnd(data.recurrence, dueAt, timezone);
 
   const base = {
     householdId,
     createdById: user.id,
     assignedToId,
+    assignedFamilyMemberId,
     categoryId,
     title: data.title,
     description: data.description,
@@ -256,6 +299,11 @@ export async function createTask({ user, householdId, data }) {
     priority: data.priority,
     dueAt,
     recurrence: data.recurrence,
+    // Head provenance for generated tasks (cleaning/maintenance/ideas);
+    // manual tasks keep MANUAL/NULL. Internal callers only — the unique
+    // (sourceType, sourceId) pair is the duplicate-task guard.
+    sourceType: source ? source.type : 'MANUAL',
+    sourceId: source ? source.id : null,
   };
 
   if (!data.recurrence) {
@@ -296,6 +344,16 @@ export async function updateTask({ user, householdId, id, patch }) {
   if (patch.assignedToId !== undefined) {
     data.assignedToId = await assertAssignee(patch.assignedToId, householdId);
   }
+  if (patch.assignedFamilyMemberId !== undefined) {
+    data.assignedFamilyMemberId = await assertFamilyAssignee(
+      patch.assignedFamilyMemberId,
+      householdId,
+    );
+  }
+  assertSingleAssigner(
+    'assignedToId' in data ? data.assignedToId : task.assignedToId,
+    'assignedFamilyMemberId' in data ? data.assignedFamilyMemberId : task.assignedFamilyMemberId,
+  );
   if (patch.categoryId !== undefined) {
     data.categoryId = await assertCategory(patch.categoryId, householdId);
   }
@@ -334,6 +392,9 @@ export async function updateTask({ user, householdId, id, patch }) {
       if (data.description !== undefined) propagate.description = data.description;
       if (data.priority !== undefined) propagate.priority = data.priority;
       if (data.assignedToId !== undefined) propagate.assignedToId = data.assignedToId;
+      if (data.assignedFamilyMemberId !== undefined) {
+        propagate.assignedFamilyMemberId = data.assignedFamilyMemberId;
+      }
       if (data.categoryId !== undefined) propagate.categoryId = data.categoryId;
       if (Object.keys(propagate).length) {
         await taskRepository.updateOpenOccurrences(id, propagate);

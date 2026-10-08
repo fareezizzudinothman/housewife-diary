@@ -10,7 +10,7 @@ import { currentSession, loadSession, clearCachedSession } from './state/session
 
 const NAV_SECTIONS = [
   {
-    title: 'Your home',
+    title: 'Your Home',
     items: [
       { href: '/pages/dashboard.html', label: 'Dashboard', icon: 'grid' },
       { href: '/', label: 'Home', icon: 'home' },
@@ -18,6 +18,23 @@ const NAV_SECTIONS = [
       { href: '/pages/tasks.html', label: 'Tasks', icon: 'list-checks' },
       { href: '/pages/calendar.html', label: 'Calendar', icon: 'calendar' },
       { href: '/pages/household.html', label: 'Household', icon: 'users' },
+    ],
+  },
+  {
+    title: 'Family',
+    items: [
+      { href: '/pages/family.html', label: 'Family', icon: 'user-group' },
+    ],
+  },
+  {
+    title: 'Home',
+    items: [
+      { href: '/pages/home.html', label: 'Home', icon: 'house' },
+      { href: '/pages/rooms.html', label: 'Rooms', icon: 'door' },
+      { href: '/pages/cleaning.html', label: 'Cleaning', icon: 'broom' },
+      { href: '/pages/laundry.html', label: 'Laundry', icon: 'shirt' },
+      { href: '/pages/maintenance.html', label: 'Maintenance', icon: 'wrench' },
+      { href: '/pages/documents.html', label: 'Documents', icon: 'file-stack' },
     ],
   },
   {
@@ -39,6 +56,13 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    title: 'Personal',
+    items: [
+      { href: '/pages/notes.html', label: 'Notes', icon: 'sticky-note' },
+      { href: '/pages/ideas.html', label: 'Ideas', icon: 'lightbulb' },
+    ],
+  },
+  {
     title: 'Settings',
     items: [
       { href: '/pages/appearance.html', label: 'Appearance', icon: 'palette' },
@@ -47,7 +71,7 @@ const NAV_SECTIONS = [
   },
 ];
 
-// Phones get the five primary destinations; everything stays reachable
+// Phones get the seven primary destinations; everything stays reachable
 // through the sidebar and the account menu.
 const BOTTOM_NAV_ITEMS = NAV_SECTIONS.flatMap((section) => section.items).filter((item) =>
   [
@@ -56,6 +80,8 @@ const BOTTOM_NAV_ITEMS = NAV_SECTIONS.flatMap((section) => section.items).filter
     '/pages/meals.html',
     '/pages/shopping.html',
     '/pages/tasks.html',
+    '/pages/family.html',
+    '/pages/notes.html',
   ].includes(item.href),
 );
 

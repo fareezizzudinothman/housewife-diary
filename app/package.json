@@ -12,6 +12,8 @@
     "start": "node src/server/server.js",
     "dev": "node --watch src/server/server.js",
     "test": "NODE_ENV=test BCRYPT_COST=4 node --test",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
@@ -26,6 +28,7 @@
     "helmet": "^8.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.45.0",
     "prisma": "^6.19.3"
   },
   "overrides": {

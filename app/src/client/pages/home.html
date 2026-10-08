@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Home management overview in Housewife Diary.">
+  <title>Home — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Home">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Home</p>
+            <h1>Home</h1>
+            <p>Rooms, cleaning, laundry, and maintenance.</p>
+          </div>
+        </div>
+
+        <section class="card" aria-labelledby="rooms-heading">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2 id="rooms-heading">Rooms</h2>
+              <p>Define the spaces in your home.</p>
+            </div>
+            <a class="btn btn--secondary btn--small" href="/pages/rooms.html">View all</a>
+          </div>
+          <div id="rooms-preview" data-rooms-preview aria-live="polite"></div>
+        </section>
+
+        <section class="card" aria-labelledby="cleaning-heading">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2 id="cleaning-heading">Cleaning</h2>
+              <p>Recurring cleaning schedules by room.</p>
+            </div>
+            <a class="btn btn--secondary btn--small" href="/pages/cleaning.html">View all</a>
+          </div>
+          <div id="cleaning-preview" data-cleaning-preview aria-live="polite"></div>
+        </section>
+
+        <section class="card" aria-labelledby="laundry-heading">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2 id="laundry-heading">Laundry</h2>
+              <p>Track laundry loads and status.</p>
+            </div>
+            <a class="btn btn--secondary btn--small" href="/pages/laundry.html">View all</a>
+          </div>
+          <div id="laundry-preview" data-laundry-preview aria-live="polite"></div>
+        </section>
+
+        <section class="card" aria-labelledby="maintenance-heading">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2 id="maintenance-heading">Maintenance</h2>
+              <p>Scheduled and ongoing maintenance tasks.</p>
+            </div>
+            <a class="btn btn--secondary btn--small" href="/pages/maintenance.html">View all</a>
+          </div>
+          <div id="maintenance-preview" data-maintenance-preview aria-live="polite"></div>
+        </section>
+
+        <section class="card" aria-labelledby="documents-heading">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2 id="documents-heading">Documents</h2>
+              <p>Warranties, contracts, and important papers.</p>
+            </div>
+            <a class="btn btn--secondary btn--small" href="/pages/documents.html">View all</a>
+          </div>
+          <div id="documents-preview" data-documents-preview aria-live="polite"></div>
+        </section>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/home.js"></script>
+</body>
+</html>

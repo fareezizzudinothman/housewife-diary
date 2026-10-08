@@ -8,6 +8,9 @@ import * as shoppingRepository from '../repositories/shoppingRepository.js';
 import * as recipeRepository from '../repositories/recipeRepository.js';
 import * as inventoryService from './inventoryService.js';
 import * as financeService from './financeService.js';
+import * as familyRepository from '../repositories/familyRepository.js';
+import * as homeRepository from '../repositories/homeRepository.js';
+import * as documentsRepository from '../repositories/documentsRepository.js';
 import { MEAL_ORDER, toMealSummaryView } from './mealService.js';
 import { DAY_MS } from '../utils/recurrence.js';
 import { getZonedNextStartOfDay, getZonedStartOfDay, toDateString } from '../utils/time.js';
@@ -18,6 +21,9 @@ const RECENT_TASK_LIMIT = 5;
 const FAVOURITE_RECIPE_LIMIT = 3;
 const INVENTORY_ALERT_LIMIT = 3;
 const WEEK_DAYS = 7;
+const DOCUMENT_EXPIRY_HORIZON_DAYS = 30;
+const UPCOMING_BIRTHDAY_LIMIT = 3;
+const UPCOMING_MAINTENANCE_LIMIT = 3;
 
 function toRecentEntryView(entry) {
   return {
@@ -52,6 +58,30 @@ function toEventSummaryView(event) {
   };
 }
 
+function toBirthdayView(member, year) {
+  const month = member.dateOfBirth.getUTCMonth();
+  const day = member.dateOfBirth.getUTCDate();
+  const isLeap = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  const safeDay = month === 1 && day === 29 && !isLeap(year) ? 28 : day;
+  const date = new Date(Date.UTC(year, month, safeDay));
+  return {
+    memberId: member.id,
+    name: member.name,
+    date: date.toISOString().slice(0, 10),
+    age: year - member.dateOfBirth.getUTCFullYear(),
+  };
+}
+
+function toMaintenanceSummaryView(job) {
+  return {
+    id: job.id,
+    title: job.title,
+    status: job.status,
+    scheduledDate: job.scheduledDate.toISOString().slice(0, 10),
+    room: job.room ? { id: job.room.id, name: job.room.name } : null,
+  };
+}
+
 export async function getDashboard({ user, householdId, householdRole }) {
   const scope = { householdId, userId: user.id };
   const timezone = user.timezone ?? 'UTC';
@@ -81,6 +111,14 @@ export async function getDashboard({ user, householdId, householdRole }) {
     favouriteRecipes,
     inventoryAlerts,
     finance,
+    familyMemberCount,
+    birthdayMembers,
+    nextFamilyEvent,
+    overdueMaintenanceCount,
+    upcomingMaintenance,
+    dueCleaningCount,
+    laundryCounts,
+    expiringDocumentCount,
   ] = await Promise.all([
     householdRepository.findById(householdId),
     householdMemberRepository.countByHouseholdIds([householdId]),
@@ -103,6 +141,26 @@ export async function getDashboard({ user, householdId, householdRole }) {
       limit: INVENTORY_ALERT_LIMIT,
     }),
     financeService.getDashboardFinance({ user, householdId }),
+    familyRepository.countMembers(householdId, {}),
+    familyRepository.listMembersWithBirthday(householdId),
+    familyRepository.listEventsInRange(householdId, todayDate, nextWeekDate).then((events) =>
+      events.length > 0
+        ? { id: events[0].id, title: events[0].title, date: events[0].eventDate.toISOString().slice(0, 10) }
+        : null,
+    ),
+    homeRepository.countMaintenanceOverdue(householdId, todayDate),
+    homeRepository.listMaintenanceInRange(householdId, { from: todayDate, to: nextWeekDate }),
+    homeRepository.countCleaningDue(householdId, now),
+    Promise.all([
+      homeRepository.countLaundry(householdId, { status: 'PENDING' }),
+      homeRepository.countLaundry(householdId, { status: 'WASHING' }),
+      homeRepository.countLaundry(householdId, { status: 'DRYING' }),
+    ]),
+    documentsRepository.countDocumentsExpiringSoon(
+      householdId,
+      todayDate,
+      new Date(todayDate.getTime() + DOCUMENT_EXPIRY_HORIZON_DAYS * DAY_MS),
+    ),
   ]);
 
   const orderedTodayMeals = [...todayMeals].sort(
@@ -122,6 +180,18 @@ export async function getDashboard({ user, householdId, householdRole }) {
     inventoryAlerts.outOfStockCount +
     inventoryAlerts.expiringSoonCount +
     inventoryAlerts.expiredCount;
+
+  const upcomingBirthdays = [];
+  const thisYear = todayDate.getUTCFullYear();
+  for (const member of birthdayMembers) {
+    for (let year = thisYear; year <= thisYear + 1 && upcomingBirthdays.length < UPCOMING_BIRTHDAY_LIMIT; year += 1) {
+      const view = toBirthdayView(member, year);
+      if (view.date >= toDateString(now, timezone)) {
+        upcomingBirthdays.push(view);
+      }
+    }
+  }
+  upcomingBirthdays.sort((a, b) => a.date.localeCompare(b.date));
 
   const dashboard = {
     user: {
@@ -186,6 +256,33 @@ export async function getDashboard({ user, householdId, householdRole }) {
       favourites: favouriteRecipes.map((recipe) => ({ id: recipe.id, title: recipe.title })),
     },
     finance,
+    family: {
+      status: familyMemberCount > 0 ? 'available' : 'empty',
+      memberCount: familyMemberCount,
+      upcomingBirthdays: upcomingBirthdays.slice(0, UPCOMING_BIRTHDAY_LIMIT),
+      nextEvent: nextFamilyEvent,
+    },
+    home: {
+      status:
+        overdueMaintenanceCount > 0 ||
+        dueCleaningCount > 0 ||
+        expiringDocumentCount > 0 ||
+        upcomingMaintenance.length > 0
+          ? 'available'
+          : 'empty',
+      overdueMaintenanceCount,
+      upcomingMaintenance: upcomingMaintenance
+        .filter((job) => job.status !== 'COMPLETED')
+        .slice(0, UPCOMING_MAINTENANCE_LIMIT)
+        .map(toMaintenanceSummaryView),
+      dueCleaningCount,
+      laundry: {
+        pending: laundryCounts[0],
+        washing: laundryCounts[1],
+        drying: laundryCounts[2],
+      },
+      expiringDocumentCount,
+    },
   };
 
   return dashboard;

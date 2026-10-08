@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Add or edit an idea in Housewife Diary.">
+  <title>Idea — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Idea">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <div class="page-head">
+          <div class="page-head__text">
+            <a class="back-link" href="/pages/ideas.html">
+              <span data-icon="chevron-left" data-icon-size="sm"></span>
+              Back to Ideas
+            </a>
+            <h1 id="form-title">New idea</h1>
+            <p>Capture ideas with category, priority, cost, and optional task link.</p>
+          </div>
+        </div>
+
+        <form id="idea-form" class="form" novalidate>
+          <div class="field">
+            <label for="title">Title <span aria-hidden="true">*</span></label>
+            <input type="text" id="title" name="title" maxlength="200" required autocomplete="off" placeholder="Idea title">
+          </div>
+
+          <div class="field">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" maxlength="5000" rows="5" placeholder="Details, notes, links…"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="category">Category</label>
+            <input type="text" id="category" name="category" maxlength="100" placeholder="e.g. Home improvement, Gift, Travel" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="priority">Priority</label>
+            <select id="priority" name="priority">
+              <option value="LOW">Low</option>
+              <option value="MEDIUM" selected>Medium</option>
+              <option value="HIGH">High</option>
+              <option value="URGENT">Urgent</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+              <option value="IDEA" selected>Idea</option>
+              <option value="PLANNED">Planned</option>
+              <option value="IN_PROGRESS">In progress</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="estimatedCost">Estimated cost</label>
+            <div class="field field--inline" style="gap: 0.5rem;">
+              <input type="number" id="estimatedCost" name="estimatedCost" min="0" step="0.01" placeholder="0.00" style="flex: 1;">
+              <select id="currency" name="currency" style="width: auto;">
+                <option value="SGD">SGD</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" maxlength="2000" rows="3" placeholder="Vendor info, links, follow-up…"></textarea>
+          </div>
+
+          <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" data-submit>Save</button>
+            <a class="btn btn--secondary" href="/pages/ideas.html">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/idea-form.js"></script>
+</body>
+</html>

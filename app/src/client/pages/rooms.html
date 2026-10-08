@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Rooms in Housewife Diary.">
+  <title>Rooms — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Rooms">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <a class="back-link" href="/pages/home.html">
+              <span data-icon="chevron-left" data-icon-size="sm"></span>
+              Back to Home
+            </a>
+            <p class="eyebrow">Home</p>
+            <h1>Rooms</h1>
+            <p>Define the spaces in your home for cleaning and maintenance.</p>
+          </div>
+          <div class="page-head__actions">
+            <a class="btn btn--primary" href="/pages/rooms.html?new=1">Add room</a>
+          </div>
+        </div>
+
+        <section class="card card--flat" aria-label="Filters">
+          <form id="room-filters" class="filter-grid" novalidate>
+            <div class="field">
+              <label for="filter-search">Search</label>
+              <input type="search" id="filter-search" name="search" maxlength="80" placeholder="Room name…">
+            </div>
+            <div class="field">
+              <label for="filter-active">Status</label>
+              <select id="filter-active" name="active">
+                <option value="true">Active only</option>
+                <option value="false">Archived only</option>
+                <option value="">All</option>
+              </select>
+            </div>
+            <div class="filter-grid__actions">
+              <button type="submit" class="btn btn--secondary btn--small">Apply</button>
+              <button type="button" class="btn btn--ghost btn--small" data-reset>Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <p id="room-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div data-room-list aria-live="polite"></div>
+
+        <nav class="pager" data-pager hidden aria-label="Room pages">
+          <button type="button" class="btn btn--secondary btn--small" data-page-prev>Previous</button>
+          <span class="pager__label" data-page-label></span>
+          <button type="button" class="btn btn--secondary btn--small" data-page-next>Next</button>
+        </nav>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/rooms.js"></script>
+</body>
+</html>

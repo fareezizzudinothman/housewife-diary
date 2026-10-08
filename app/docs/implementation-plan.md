@@ -14,7 +14,7 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 | 5 | Tasks and calendar | **Complete** |
 | 6 | Meals, recipes, shopping, inventory | **Complete** |
 | 7 | Finance, expenses, bills, budgets, reports | **Complete** |
-| 8 | Family, home management, home inventory, documents | Planned |
+| 8 | Family, home management, documents, notes, ideas | **Complete** |
 | 9 | Notifications, PWA, backup, export | Planned |
 | 10 | AI assistant and household automation | Planned |
 
@@ -181,9 +181,37 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 - `docker compose up -d --build` healthy; `/api/health` returns `success: true`; a 20-check finance smoke run through the container passes (exact totals, derived balances, duplicate-payment `409`, receipt roundtrip, report/dashboard equality).
 - Browser-verified with Playwright (9-step serial flow): accounts → category/budget → bills + payment + calendar → expense/income/transfer → recurring → receipt → report → dashboard; no console/API errors; no horizontal overflow at 1360/1024/820/768/480/375 px. Phase 6 E2E regression: 9/9 still passing.
 
+## Phase 8 — Family + Home + Documents + Notes + Ideas (delivered)
+
+**Scope:**
+
+- Eighth Prisma migration `family_home_documents`: `family_members`, `family_events`, `home_rooms`, `cleaning_schedules`, `laundry_loads`, `maintenance_records`, `documents`, `notes`, `ideas` (+ new enums: `cleaning_frequency`, `cleaning_status`, `laundry_status`, `maintenance_status`, `doc_category`, `doc_reference_type`, `doc_expiry_status`, `idea_status`).
+- **Family module:** members (name, relationship, date of birth, linked user, notes, active), events (title, kind, date, member, yearly repeat, notes). Birthday → Calendar, events → Calendar, linked user birthdays → Calendar.
+- **Home management:** rooms (CRUD), cleaning schedules (room, frequency, interval, assignee, next due), laundry loads (category, status, scheduled date), maintenance (title, category, room, scheduled date, priority, status, description, transaction link, notes). Maintenance → Calendar, Maintenance → Task generation.
+- **Documents:** secure upload (raw binary + magic-byte verification, ≤5 MB, JPEG/PNG/WebP/PDF), metadata (title, category, expiry, cross-references), private authenticated streaming, expiry status (ACTIVE/EXPIRING_SOON/EXPIRED).
+- **Notes:** plain-text CRUD with tags (array, max 10), pin/unpin, archive/unarchive, category, search (title/content), tag filter, pin/archived filters. Notes vs Diary: separate tables, no overlap.
+- **Ideas:** lightweight capture (title, description, category, priority, status, estimated cost + currency, notes), optional Task link (`POST /api/ideas/:id/task` → creates Task, sets idea status → `PLANNED`).
+- **Calendar & Task Integrations:** Family events/birthdays → Calendar (derived, all-day, yearly); Maintenance → Calendar + Task generation; Ideas → Task generation (status → `PLANNED`).
+- **Dashboard Integration:** Family section (member count, upcoming birthdays); Home section (rooms, overdue/upcoming maintenance, due cleaning, laundry status, expiring documents).
+- **Documents Security:** Magic-byte verification, 5 MB max, private streaming endpoint, expiry status computed at read time.
+- **Client:** 14 new pages (`family`, `family-member-form`, `home`, `rooms`, `cleaning`, `laundry`, `maintenance`, `maintenance-form`, `documents`, `document-form`, `notes`, `note-form`, `ideas`, `idea-form`) with shared shell, components, API clients, modal forms, minimalist CSS on existing theme tokens.
+- Tests: 56 new server tests (279 total) across family, home (rooms/cleaning/laundry/maintenance), documents, notes, ideas, plus Phase 8 integration tests; 279/279 passing.
+- Playwright E2E: 12 core flows covering family, home, calendar, dashboard, documents, notes, ideas, responsive layouts, household isolation.
+
+**Out of scope (intentionally deferred):** rich text editing for notes; idea comments/voting; sub-ideas; advanced document OCR/search; notification delivery (Phase 9); AI (Phase 10).
+
+**Design:** [family.md](family.md), [home-management.md](home-management.md), [documents.md](documents.md), [notes.md](notes.md), [ideas.md](ideas.md), [architecture.md](architecture.md), [database-design.md](database-design.md), [api-design.md](api-design.md).
+
+### Completion criteria (met)
+
+- `npm test` passes (279 tests) including all Phase 8 suites plus the updated dashboard/calendar contracts and cross-module isolation tests.
+- Migration `family_home_documents` applied; `prisma migrate status` reports an up-to-date schema.
+- `docker compose up -d --build` healthy; `/api/health` returns `success: true`; smoke tests pass for Family, Home, Documents, Notes, Ideas, Calendar integrations, Dashboard, and household isolation.
+- Browser-verified with Playwright (12 core flows): create family member, create family event → verify in Calendar, create room → verify in Home, create maintenance → verify in Calendar, verify Dashboard family/home sections, upload document → verify private access, create note with tags/pin, search note by tag, create idea with cost + Task link, responsive layouts (375–1360 px), household isolation.
+- Phase 6–7 E2E regression: all previous flows still passing.
+
 ## Later phases (summary scope)
 
-- **Phase 8:** family members/events, cleaning & house management, home assets/warranties, documents, notes, ideas.
 - **Phase 9:** notification center, PWA, backup/export.
 - **Phase 10:** AI assistant over the tool layer.
 

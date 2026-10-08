@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Add or edit maintenance in Housewife Diary.">
+  <title>Maintenance — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Maintenance">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <div class="page-head">
+          <div class="page-head__text">
+            <a class="back-link" href="/pages/maintenance.html">
+              <span data-icon="chevron-left" data-icon-size="sm"></span>
+              Back to Maintenance
+            </a>
+            <h1 id="form-title">Add maintenance</h1>
+            <p>Track scheduled and ongoing maintenance tasks.</p>
+          </div>
+        </div>
+
+        <form id="maintenance-form" class="form" novalidate>
+          <div class="field">
+            <label for="title">Title <span aria-hidden="true">*</span></label>
+            <input type="text" id="title" name="title" maxlength="120" required autocomplete="off" placeholder="e.g. HVAC service, Roof inspection">
+          </div>
+
+          <div class="field">
+            <label for="category">Category <span aria-hidden="true">*</span></label>
+            <input type="text" id="category" name="category" maxlength="40" required autocomplete="off" placeholder="e.g. HVAC, Plumbing, Electrical">
+          </div>
+
+          <div class="field">
+            <label for="scheduledDate">Scheduled date <span aria-hidden="true">*</span></label>
+            <input type="date" id="scheduledDate" name="scheduledDate" required>
+          </div>
+
+          <div class="field">
+            <label for="priority">Priority</label>
+            <select id="priority" name="priority">
+              <option value="LOW">Low</option>
+              <option value="MEDIUM" selected>Medium</option>
+              <option value="HIGH">High</option>
+              <option value="URGENT">Urgent</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+              <option value="OPEN" selected>Open</option>
+              <option value="IN_PROGRESS">In progress</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="roomId">Room</label>
+            <select id="roomId" name="roomId">
+              <option value="">No room assigned</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" maxlength="2000" rows="4" placeholder="Details about the maintenance…"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" maxlength="2000" rows="3" placeholder="Vendor info, warranty, follow-up…"></textarea>
+          </div>
+
+          <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" data-submit>Save</button>
+            <a class="btn btn--secondary" href="/pages/maintenance.html">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/maintenance-form.js"></script>
+</body>
+</html>

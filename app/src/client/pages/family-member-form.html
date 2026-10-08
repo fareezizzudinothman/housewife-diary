@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Add or edit a family member in Housewife Diary.">
+  <title>Family member — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Family member">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <div class="page-head">
+          <div class="page-head__text">
+            <a class="back-link" href="/pages/family.html">
+              <span data-icon="chevron-left" data-icon-size="sm"></span>
+              Back to Family
+            </a>
+            <h1 id="form-title">Add family member</h1>
+            <p>Record their details and important dates.</p>
+          </div>
+        </div>
+
+        <form id="member-form" class="form" novalidate>
+          <div class="field">
+            <label for="name">Name <span aria-hidden="true">*</span></label>
+            <input type="text" id="name" name="name" maxlength="80" required autocomplete="name">
+          </div>
+
+          <div class="field">
+            <label for="relationship">Relationship <span aria-hidden="true">*</span></label>
+            <input type="text" id="relationship" name="relationship" maxlength="40" required placeholder="e.g. Spouse, Child, Parent" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="dateOfBirth">Date of birth</label>
+            <input type="date" id="dateOfBirth" name="dateOfBirth">
+          </div>
+
+          <div class="field">
+            <label for="linkedUserId">Linked user</label>
+            <select id="linkedUserId" name="linkedUserId">
+              <option value="">None — not a household member</option>
+            </select>
+            <p class="field-hint">Link to a household user so their birthday appears on the calendar automatically.</p>
+          </div>
+
+          <div class="field">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" maxlength="1000" rows="4" placeholder="Allergies, medications, preferences…"></textarea>
+          </div>
+
+          <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" data-submit>Save</button>
+            <a class="btn btn--secondary" href="/pages/family.html">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/family-member-form.js"></script>
+</body>
+</html>

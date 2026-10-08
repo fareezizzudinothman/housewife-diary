@@ -124,6 +124,78 @@ Accounts (one currency each)        Categories (global seeds + household)
 
 The assistant never receives database access. It sits above a tool layer of allow-listed, household-scoped functions (`getTasks`, `createMeal`, `analyseExpenses`, …) that call the same application services used by the REST API, so authentication and household isolation apply automatically. See [ai-architecture.md](ai-architecture.md).
 
+## Family + Home + Documents + Notes + Ideas (Phase 8)
+
+Phase 8 adds household management modules following the same layered architecture:
+
+```
+src/server/
+  controllers/
+    familyController.js      # family members + events
+    homeController.js        # rooms, cleaning, laundry, maintenance
+    documentsController.js   # secure uploads, private serving
+    notesController.js       # CRUD, tags, pin, archive
+    ideasController.js       # CRUD, optional task link
+  repositories/
+    familyRepository.js
+    homeRepository.js
+    documentsRepository.js
+    notesRepository.js
+    ideasRepository.js
+  services/
+    familyService.js
+    homeService.js
+    documentsService.js
+    notesService.js
+    ideasService.js
+  validators/
+    familyValidators.js
+    homeValidators.js
+    documentsValidators.js
+    notesValidators.js
+    ideasValidators.js
+  routes/
+    family.routes.js
+    home.routes.js
+    documents.routes.js
+    notes.routes.js
+    ideas.routes.js
+```
+
+### Calendar & Task Integrations
+
+| Source | Calendar (read-only derived) | Task generation |
+|--------|------------------------------|-----------------|
+| Family events (birthdays, anniversaries) | `sourceType: FAMILY`, all-day, yearly if repeating | — |
+| Family member birthdays | `sourceType: FAMILY`, all-day, yearly | — |
+| Maintenance (scheduled date) | `sourceType: MAINTENANCE`, all-day | `POST /api/home/maintenance/:id/task` |
+| Ideas | — | `POST /api/ideas/:id/task` |
+
+These follow the existing source abstraction established in Phases 5-7 — no new calendar or task tables, just derived read-only items and atomic task creation endpoints.
+
+### Dashboard Integration
+
+`dashboardService.getDashboard()` now includes:
+- `family`: member count, upcoming birthdays
+- `home`: overdue maintenance, upcoming maintenance, due cleaning, laundry status, expiring documents
+- Modules marked `available` when household has at least one record
+
+### Documents Security
+
+- Raw binary uploads (same pattern as Diary attachments)
+- Magic-byte MIME verification (JPEG, PNG, WebP, PDF only)
+- 5 MB max, private streaming endpoint (`/api/documents/:id/file`)
+- Expiry status computed on read (ACTIVE, EXPIRING_SOON, EXPIRED)
+- Cross-references: MAINTENANCE, FINANCE_TRANSACTION, INVENTORY, FAMILY_MEMBER
+
+### Notes vs Diary
+
+Notes are topic-based reference (tags, pin, archive, search). Diary is date-based personal journal (attachments, mood). Separate tables, separate APIs, no overlap.
+
+### Ideas vs Tasks
+
+Ideas capture lightweight wishes with optional cost estimate. One-way link to generate a Task (`POST /api/ideas/:id/task`). Ideas never become tasks automatically.
+
 ## Key architectural decisions
 
 | Decision | Rationale |

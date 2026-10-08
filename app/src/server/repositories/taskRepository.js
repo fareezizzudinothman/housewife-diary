@@ -4,6 +4,7 @@ import { prisma } from '../utils/prisma.js';
 const TASK_INCLUDE = {
   category: { select: { id: true, name: true } },
   assignedTo: { select: { id: true, name: true } },
+  assignedFamilyMember: { select: { id: true, name: true } },
   createdBy: { select: { id: true, name: true } },
 };
 
@@ -186,6 +187,22 @@ export function deleteTask(id, householdId) {
   return prisma.task.delete({ where: { id, householdId } });
 }
 
+// ---- Generated-task provenance (Phase 8) ----
+
+// The head generated for a cleaning definition / maintenance / idea. The
+// unique (sourceType, sourceId) constraint guarantees at most one.
+export function findTaskBySource(householdId, sourceType, sourceId) {
+  return prisma.task.findFirst({
+    where: { householdId, sourceType, sourceId },
+    include: TASK_INCLUDE,
+  });
+}
+
+// Removes the generated head — occurrences cascade via the series relation.
+export function deleteTasksBySource(householdId, sourceType, sourceId) {
+  return prisma.task.deleteMany({ where: { householdId, sourceType, sourceId } });
+}
+
 // ---- Recurring series ----
 
 export function listSeriesHeads(householdId) {
@@ -195,6 +212,21 @@ export function listSeriesHeads(householdId) {
       recurrence: { not: Prisma.DbNull },
     },
     select: { id: true, dueAt: true, recurrence: true },
+  });
+}
+
+// Materialized occurrence rows of a series (everything but the head). Used by
+// the home module to derive a cleaning definition's next due / last completed.
+export function listSeriesOccurrences(householdId, seriesId) {
+  return prisma.task.findMany({
+    where: { householdId, seriesId, NOT: { id: seriesId } },
+    select: {
+      id: true,
+      dueAt: true,
+      status: true,
+      completedAt: true,
+    },
+    orderBy: { dueAt: 'asc' },
   });
 }
 

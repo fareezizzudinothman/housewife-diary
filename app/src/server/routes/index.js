@@ -13,6 +13,11 @@ import mealsRoutes from './meals.routes.js';
 import shoppingRoutes from './shopping.routes.js';
 import inventoryRoutes from './inventory.routes.js';
 import financeRoutes from './finance.routes.js';
+import familyRoutes from './family.routes.js';
+import homeRoutes from './home.routes.js';
+import documentsRoutes from './documents.routes.js';
+import notesRoutes from './notes.routes.js';
+import ideasRoutes from './ideas.routes.js';
 
 const router = Router();
 
@@ -30,5 +35,10 @@ router.use('/meals', mealsRoutes);
 router.use('/shopping-lists', shoppingRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/finance', financeRoutes);
+router.use('/family', familyRoutes);
+router.use('/home', homeRoutes);
+router.use('/documents', documentsRoutes);
+router.use('/notes', notesRoutes);
+router.use('/ideas', ideasRoutes);
 
 export default router;

@@ -105,6 +105,11 @@ export function validateCreateTask(input) {
   const priority = validatePriority(input?.priority, errors);
   const due = validateDue(input?.dueAt, errors);
   const assignedToId = validateOptionalId(input?.assignedToId, 'assignedToId', errors);
+  const assignedFamilyMemberId = validateOptionalId(
+    input?.assignedFamilyMemberId,
+    'assignedFamilyMemberId',
+    errors,
+  );
   const categoryId = validateOptionalId(input?.categoryId, 'categoryId', errors);
   const recurrence = validateRecurrence(input?.recurrence, { errors });
 
@@ -124,6 +129,7 @@ export function validateCreateTask(input) {
     dueAt: due.dueAt,
     dueDate: due.dueDate,
     assignedToId,
+    assignedFamilyMemberId,
     categoryId,
     recurrence: recurrence.recurrence ?? null,
   };
@@ -188,6 +194,15 @@ export function validateUpdateTask(input) {
   if (input?.assignedToId !== undefined) {
     provided = true;
     patch.assignedToId = validateOptionalId(input.assignedToId, 'assignedToId', errors);
+  }
+
+  if (input?.assignedFamilyMemberId !== undefined) {
+    provided = true;
+    patch.assignedFamilyMemberId = validateOptionalId(
+      input.assignedFamilyMemberId,
+      'assignedFamilyMemberId',
+      errors,
+    );
   }
 
   if (input?.categoryId !== undefined) {
