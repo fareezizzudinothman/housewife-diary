@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Household recipes in Housewife Diary.">
+  <title>Recipes — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Recipes">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Kitchen</p>
+            <h1>Recipes</h1>
+            <p>Your household cookbook — ingredients stay structured so meals can flow into shopping.</p>
+          </div>
+          <div class="page-head__actions">
+            <a class="btn btn--primary" href="/pages/recipe-form.html">New recipe</a>
+          </div>
+        </div>
+
+        <section class="card card--flat" aria-label="Filters">
+          <form id="recipe-filters" class="filter-grid" novalidate>
+            <div class="field">
+              <label for="filter-search">Search</label>
+              <input type="search" id="filter-search" name="search" maxlength="100" placeholder="Title or notes…">
+            </div>
+            <div class="field">
+              <label for="filter-category">Category</label>
+              <select id="filter-category" name="category">
+                <option value="">All categories</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-sort">Sort</label>
+              <select id="filter-sort" name="sort">
+                <option value="updated">Recently updated</option>
+                <option value="created">Newest first</option>
+                <option value="title">Title A–Z</option>
+              </select>
+            </div>
+            <div class="field">
+              <span class="field-label">Favourites</span>
+              <label class="field--check">
+                <input type="checkbox" id="filter-favourite" name="favourite">
+                Only favourites
+              </label>
+            </div>
+            <div class="filter-grid__actions">
+              <button type="submit" class="btn btn--secondary btn--small">Apply</button>
+              <button type="button" class="btn btn--ghost btn--small" data-reset>Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <p id="recipe-filter-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div data-recipe-list aria-live="polite"></div>
+
+        <nav class="pager" data-pager hidden aria-label="Recipe pages">
+          <button type="button" class="btn btn--secondary btn--small" data-page-prev>Previous</button>
+          <span class="pager__label" data-page-label></span>
+          <button type="button" class="btn btn--secondary btn--small" data-page-next>Next</button>
+        </nav>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/recipes.js"></script>
+</body>
+</html>

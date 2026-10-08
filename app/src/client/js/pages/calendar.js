@@ -135,6 +135,8 @@ function buildDayRow(event) {
   title.textContent = event.title;
   if (event.sourceType === 'TASK') {
     title.href = `/pages/task-form.html?id=${encodeURIComponent(event.sourceId)}`;
+  } else if (event.sourceType === 'MEAL') {
+    title.href = `/pages/meal-form.html?id=${encodeURIComponent(event.sourceId)}`;
   } else {
     title.href = `/pages/event-form.html?id=${encodeURIComponent(event.id)}`;
   }
@@ -146,6 +148,9 @@ function buildDayRow(event) {
   }
   if (event.sourceType === 'TASK') {
     parts.push('Task');
+  }
+  if (event.sourceType === 'MEAL') {
+    parts.push('Meal');
   }
   if (event.recurring) {
     parts.push('Repeats');

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Create or edit a recipe in Housewife Diary.">
+  <title>Recipe — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="New recipe">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <a class="back-link" href="/pages/recipes.html">← All recipes</a>
+
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Kitchen</p>
+            <h1 data-form-title>New recipe</h1>
+            <p data-form-subtitle>Ingredients stay structured so they can be added to shopping.</p>
+          </div>
+        </div>
+
+        <div data-form-notice></div>
+
+        <form id="recipe-form" class="card form" novalidate>
+          <div class="field">
+            <label for="recipe-title">Title</label>
+            <input type="text" id="recipe-title" name="title" maxlength="160" required autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="recipe-description">Short description</label>
+            <textarea id="recipe-description" name="description" rows="2" maxlength="2000" placeholder="What is this dish?…"></textarea>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="recipe-category">Category</label>
+              <input type="text" id="recipe-category" name="category" maxlength="60" list="recipe-category-options" placeholder="Dinner, Dessert…">
+              <datalist id="recipe-category-options"></datalist>
+            </div>
+            <div class="field">
+              <label for="recipe-cuisine">Cuisine</label>
+              <input type="text" id="recipe-cuisine" name="cuisine" maxlength="60" placeholder="Indian, Italian…">
+            </div>
+            <div class="field">
+              <label for="recipe-servings">Servings</label>
+              <input type="number" id="recipe-servings" name="servings" min="1" max="100" value="4">
+            </div>
+            <div class="field">
+              <label for="recipe-prep">Prep (minutes)</label>
+              <input type="number" id="recipe-prep" name="prepMinutes" min="0" max="1440">
+            </div>
+            <div class="field">
+              <label for="recipe-cook">Cook (minutes)</label>
+              <input type="number" id="recipe-cook" name="cookMinutes" min="0" max="1440">
+            </div>
+            <div class="field">
+              <span class="field-label">Favourite</span>
+              <label class="field--check">
+                <input type="checkbox" id="recipe-favourite" name="isFavourite">
+                Mark as favourite
+              </label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="recipe-instructions">Instructions</label>
+            <textarea id="recipe-instructions" name="instructions" rows="6" maxlength="20000" placeholder="Step by step…"></textarea>
+          </div>
+
+          <fieldset class="repeat-box">
+            <legend>Ingredients</legend>
+            <div class="ingredient-rows" data-ingredient-rows></div>
+            <button type="button" class="btn btn--secondary btn--small" data-add-ingredient>Add ingredient</button>
+            <p class="field-hint">Quantities scale when a recipe is added to a shopping list.</p>
+          </fieldset>
+
+          <div class="field">
+            <label for="recipe-notes">Notes</label>
+            <textarea id="recipe-notes" name="notes" rows="2" maxlength="2000" placeholder="Optional tips…"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary">Save recipe</button>
+            <a class="btn btn--ghost" href="/pages/recipes.html">Cancel</a>
+            <button type="button" class="btn btn--secondary" data-duplicate hidden>Duplicate</button>
+            <button type="button" class="btn btn--danger" data-delete hidden>Delete</button>
+          </div>
+          <p id="recipe-form-status" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/recipe-form.js"></script>
+</body>
+</html>

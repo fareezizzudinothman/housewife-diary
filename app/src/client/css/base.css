@@ -33,6 +33,12 @@ video {
   max-width: 100%;
 }
 
+/* The hidden attribute must win over component display rules (.field,
+   .btn, .pager, …) so toggled sections actually disappear. */
+[hidden] {
+  display: none !important;
+}
+
 button,
 input,
 select,

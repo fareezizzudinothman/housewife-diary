@@ -1201,7 +1201,8 @@
 .module-tile {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.55rem;
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
@@ -1214,7 +1215,7 @@
 }
 
 .module-tile__label {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   font-size: 0.92rem;
   font-weight: var(--weight-medium);
@@ -1232,6 +1233,7 @@
 
 .module-tile__meta {
   flex: none;
+  margin-left: auto;
   font-size: 0.78rem;
   color: var(--color-text-muted);
 }
@@ -1688,5 +1690,288 @@
 
   .cal-cell__more {
     display: none;
+  }
+}
+
+/* ---------------- Kitchen modules (Phase 6) ---------------- */
+
+.meta-text {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.star-btn[aria-pressed='true'] {
+  color: var(--color-warning-strong);
+}
+
+.star-btn[aria-pressed='true'] .icon {
+  fill: currentColor;
+}
+
+.recipe-row__title {
+  font-size: 1rem;
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.recipe-row__title:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.recipe-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.ingredient-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ingredient-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5rem 5rem auto auto;
+  grid-template-areas:
+    'name qty unit optional remove'
+    'notes notes notes notes notes';
+  align-items: center;
+  gap: 0.45rem 0.5rem;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-background);
+}
+
+.ingredient-row__name {
+  grid-area: name;
+}
+
+.ingredient-row__qty {
+  grid-area: qty;
+}
+
+.ingredient-row__unit {
+  grid-area: unit;
+}
+
+.ingredient-row__optional {
+  grid-area: optional;
+  white-space: nowrap;
+}
+
+.ingredient-row__remove {
+  grid-area: remove;
+}
+
+.ingredient-row__notes {
+  grid-area: notes;
+}
+
+.ingredient-row input[type='text'],
+.ingredient-row input[type='number'] {
+  width: 100%;
+}
+
+.ingredient-row .field--check {
+  font-size: 0.82rem;
+}
+
+/* Meal planner */
+
+.planner__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.planner__title {
+  font-size: 1rem;
+  font-weight: var(--weight-semibold);
+}
+
+.planner__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.planner__day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+
+.planner__day--today {
+  border-color: var(--color-primary);
+}
+
+.planner__day--muted {
+  background: var(--color-surface-alt);
+}
+
+.planner__day-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.planner__day-name {
+  font-size: 0.8rem;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.planner__day-date {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.planner__slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.planner__slot-label {
+  font-size: 0.68rem;
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.planner__entry {
+  display: block;
+  padding: 0.18rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: 0.78rem;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.planner__entry:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary-strong);
+}
+
+.planner__add {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.72rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.planner__add:hover {
+  color: var(--color-primary);
+}
+
+/* Shopping */
+
+.shop-item {
+  align-items: flex-start;
+}
+
+.shop-item__check {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.2rem;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.shop-item--purchased .shop-item__name {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.shop-item__name {
+  font-weight: var(--weight-semibold);
+}
+
+.shop-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+/* Inventory */
+
+.stock-chip {
+  display: inline-block;
+  padding: 0.12rem 0.6rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+.stock-chip--ok {
+  background: var(--color-success-soft);
+  color: var(--color-success-strong);
+}
+
+.stock-chip--low,
+.stock-chip--expiring {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-strong);
+}
+
+.stock-chip--out,
+.stock-chip--expired {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-strong);
+}
+
+.inventory-qty {
+  font-weight: var(--weight-semibold);
+}
+
+@media (max-width: 900px) {
+  .planner__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .planner__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ingredient-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'name name'
+      'qty unit'
+      'optional optional'
+      'notes notes'
+      'remove remove';
   }
 }

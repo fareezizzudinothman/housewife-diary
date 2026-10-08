@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Add or edit an inventory item in Housewife Diary.">
+  <title>Inventory item — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="New inventory item">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <a class="back-link" href="/pages/inventory.html">← Inventory</a>
+
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Kitchen</p>
+            <h1 data-form-title>New inventory item</h1>
+            <p data-form-subtitle>Track what is at home and where it lives.</p>
+          </div>
+        </div>
+
+        <div data-form-notice></div>
+
+        <form id="inventory-form" class="card form" novalidate>
+          <div class="field">
+            <label for="inv-name">Name</label>
+            <input type="text" id="inv-name" name="name" maxlength="120" required autocomplete="off">
+          </div>
+
+          <div class="form-grid">
+            <div class="field" data-create-quantity>
+              <label for="inv-quantity">Quantity</label>
+              <input type="number" id="inv-quantity" name="quantity" min="0" step="0.001" value="0">
+            </div>
+            <div class="field" data-edit-quantity hidden>
+              <span class="field-label">Current quantity</span>
+              <p class="inventory-qty" data-current-quantity>0</p>
+            </div>
+            <div class="field">
+              <label for="inv-unit">Unit</label>
+              <input type="text" id="inv-unit" name="unit" maxlength="30" placeholder="kg, pcs…">
+            </div>
+            <div class="field">
+              <label for="inv-category">Category</label>
+              <select id="inv-category" name="category">
+                <option value="OTHER">Other</option>
+                <option value="PRODUCE">Produce</option>
+                <option value="MEAT">Meat</option>
+                <option value="SEAFOOD">Seafood</option>
+                <option value="DAIRY">Dairy</option>
+                <option value="PANTRY">Pantry</option>
+                <option value="FROZEN">Frozen</option>
+                <option value="DRINKS">Drinks</option>
+                <option value="HOUSEHOLD">Household</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="inv-location">Location</label>
+              <select id="inv-location" name="location">
+                <option value="PANTRY">Pantry</option>
+                <option value="REFRIGERATOR">Refrigerator</option>
+                <option value="FREEZER">Freezer</option>
+                <option value="HOUSEHOLD">Household</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="inv-expires">Expiry date</label>
+              <input type="date" id="inv-expires" name="expiresAt" min="1900-01-01" max="2100-12-31">
+            </div>
+            <div class="field">
+              <label for="inv-minimum">Minimum quantity</label>
+              <input type="number" id="inv-minimum" name="minimumQuantity" min="0" step="0.001" value="0">
+              <p class="field-hint">Alerts when stock drops to this level.</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="inv-notes">Notes</label>
+            <textarea id="inv-notes" name="notes" rows="2" maxlength="1000" placeholder="Optional"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary">Save item</button>
+            <a class="btn btn--ghost" href="/pages/inventory.html">Cancel</a>
+            <button type="button" class="btn btn--secondary" data-adjust hidden>Adjust quantity</button>
+            <button type="button" class="btn btn--danger" data-delete hidden>Delete</button>
+          </div>
+          <p id="inventory-form-status" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+
+        <section class="card" data-history hidden aria-label="Stock history">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Stock history</h2>
+              <p>Every quantity change is recorded</p>
+            </div>
+          </div>
+          <div data-history-list></div>
+        </section>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/inventory-form.js"></script>
+</body>
+</html>
