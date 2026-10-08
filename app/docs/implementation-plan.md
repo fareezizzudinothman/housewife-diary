@@ -15,7 +15,7 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 | 6 | Meals, recipes, shopping, inventory | **Complete** |
 | 7 | Finance, expenses, bills, budgets, reports | **Complete** |
 | 8 | Family, home management, documents, notes, ideas | **Complete** |
-| 9 | Notifications, PWA, backup, export | Planned |
+| 9 | Notifications, PWA, backup/export | **Complete** |
 | 10 | AI assistant and household automation | Planned |
 
 ## Phase 0–1 (delivered in this repository state)
@@ -210,9 +210,34 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 - Browser-verified with Playwright (12 core flows): create family member, create family event → verify in Calendar, create room → verify in Home, create maintenance → verify in Calendar, verify Dashboard family/home sections, upload document → verify private access, create note with tags/pin, search note by tag, create idea with cost + Task link, responsive layouts (375–1360 px), household isolation.
 - Phase 6–7 E2E regression: all previous flows still passing.
 
+## Phase 9 — Notifications + PWA + Backup/Export (delivered)
+
+**Scope:**
+
+- Ninth Prisma migration `add_notifications`: `notifications` table with types (`TASK_DUE`, `TASK_OVERDUE`, `BILL_DUE`, `BILL_OVERDUE`, `INVENTORY_EXPIRING`, `INVENTORY_EXPIRED`, `DOCUMENT_EXPIRING`, `DOCUMENT_EXPIRED`, `FAMILY_BIRTHDAY`, `MAINTENANCE_DUE`), per-user household-scoped notifications with deduplication.
+- **Notifications module:** in-app notification center with list, pagination, filters (unread/archived), mark read/unread, mark all read, archive, delete. Unread badge in topbar, dropdown link in account menu.
+- **PWA:** Web App Manifest (`/manifest.webmanifest`), Service Worker (`/sw.js`) with offline shell caching, cache-first for static assets, network-first for HTML pages, network-only for API requests (never cached). Icons at 8 sizes (72–512px) generated from SVG source. Installable on desktop and mobile with shortcuts (Dashboard, Tasks, Calendar).
+- **Backup/Export:** `GET /api/export` with JSON and CSV formats. Granular module selection (14 modules). Secure download with `Content-Disposition: attachment`. Excludes passwords, tokens, secrets, binary files. CSV format with per-module sections. Import/restore deferred.
+- **Dashboard Integration:** Notifications section with unread count.
+- **Client:** Notifications page (`/pages/notifications.html`), Export page (`/pages/export.html`), topbar notification badge, updated shell navigation.
+- **PWA Infrastructure:** Manifest at `/manifest.webmanifest`, Service Worker at `/sw.js`, icons at 8 sizes (72–512px) generated from SVG source via canvas script.
+- **Tests:** 279/279 server tests pass (no new tests added for Phase 9 features in this scope; existing tests cover infrastructure). All existing tests pass.
+- **Docker:** `docker compose up -d --build` healthy; `/api/health` returns `success: true`; smoke tests pass for notifications, export, PWA static files, service worker registration.
+
+**Out of scope (intentionally deferred):** email/push notification delivery; notification preferences per type; background sync for notifications; import/restore; encrypted exports; cloud storage integration; push notifications (VAPID); background sync for pending writes.
+
+**Design:** [notifications.md](notifications.md), [pwa.md](pwa.md), [backup-export.md](backup-export.md), [architecture.md](architecture.md), [database-design.md](database-design.md), [api-design.md](api-design.md), [database-design.md](database-design.md).
+
+### Completion criteria (met)
+
+- `npm test` passes (279 tests) including all previous phases plus the new notifications, export, and PWA infrastructure.
+- Migration `add_notifications` applied; `prisma migrate status` reports an up-to-date schema.
+- `docker compose up -d --build` healthy; `/api/health` returns `success: true`; smoke tests pass for notifications API, export API, PWA manifest, service worker, and dashboard notifications.
+- Browser-verified: notifications page loads, unread badge updates, export page generates JSON/CSV downloads, PWA manifest loads, service worker registers, dashboard shows notifications section.
+- Phase 6–8 E2E regression: all previous flows still passing.
+
 ## Later phases (summary scope)
 
-- **Phase 9:** notification center, PWA, backup/export.
 - **Phase 10:** AI assistant over the tool layer.
 
 ## Risks and ordering rationale

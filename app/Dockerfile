@@ -3,7 +3,18 @@
 FROM node:24-alpine
 
 # Prisma query engines require a compatible OpenSSL on Alpine.
-RUN apk add --no-cache openssl
+# Canvas requires additional system dependencies for native compilation.
+RUN apk add --no-cache \
+    openssl \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    giflib-dev \
+    librsvg-dev \
+    python3 \
+    make \
+    g++ \
+    pixman-dev
 
 WORKDIR /usr/src/app
 

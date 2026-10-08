@@ -117,3 +117,11 @@ export function listNoteTags(householdId) {
     orderBy: { name: 'asc' },
   });
 }
+
+export function listNotesForExport(householdId, userId) {
+  return prisma.note.findMany({
+    where: { householdId, createdById: userId },
+    select: NOTE_SELECT,
+    orderBy: [{ pinned: 'desc' }, { updatedAt: 'desc' }],
+  });
+}

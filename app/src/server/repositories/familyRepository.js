@@ -155,3 +155,31 @@ export function updateEvent(id, householdId, data) {
 export function deleteEvent(id, householdId) {
   return prisma.familyEvent.deleteMany({ where: { id, householdId } });
 }
+
+export async function exportFamilyData(householdId) {
+  const [members, events] = await Promise.all([
+    prisma.familyMember.findMany({
+      where: { householdId },
+      select: {
+        id: true,
+        name: true,
+        normalized: true,
+        relationship: true,
+        linkedUserId: true,
+        dateOfBirth: true,
+        notes: true,
+        active: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: [{ active: 'desc' }, { name: 'asc' }],
+    }),
+    prisma.familyEvent.findMany({
+      where: { householdId },
+      select: EVENT_SELECT,
+      orderBy: { eventDate: 'asc' },
+    }),
+  ]);
+
+  return { members, events };
+}

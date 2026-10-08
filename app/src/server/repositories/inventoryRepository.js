@@ -197,3 +197,10 @@ export function listAlertCandidates(householdId, today, soonEnd, limit) {
     take: limit,
   });
 }
+
+export function listInventoryForExport(householdId) {
+  return prisma.inventoryItem.findMany({
+    where: { householdId },
+    orderBy: [{ expiresAt: { sort: 'asc', nulls: 'last' } }, { normalized: 'asc' }],
+  });
+}

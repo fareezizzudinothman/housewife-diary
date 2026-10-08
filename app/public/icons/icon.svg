@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Housewife Diary App Icon -->
+  <defs>
+    <linearGradient id="roofGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#c96e6e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a85555;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="houseGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#faf9f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f0efe8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="doorGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5a3c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6b4226;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="windowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#87ceeb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4682b4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#faf9f7" stroke="#e8e4dc" stroke-width="8"/>
+  
+  <!-- Roof -->
+  <path d="M120 240 L256 100 L392 240 Z" fill="url(#roofGradient)"/>
+  
+  <!-- House body -->
+  <rect x="120" y="240" width="272" height="192" rx="8" fill="url(#houseGradient)" stroke="#e8e4dc" stroke-width="4"/>
+  
+  <!-- Door -->
+  <rect x="236" y="320" width="40" height="112" rx="4" fill="url(#doorGradient)"/>
+  <circle cx="260" cy="370" r="4" fill="#d4a574"/>
+  
+  <!-- Windows -->
+  <rect x="152" y="272" width="56" height="56" rx="4" fill="url(#windowGradient)"/>
+  <rect x="304" y="272" width="56" height="56" rx="4" fill="url(#windowGradient)"/>
+  
+  <!-- Window crossbars -->
+  <line x1="180" y1="272" x2="180" y2="328" stroke="#ffffff" stroke-width="3" stroke-opacity="0.6"/>
+  <line x1="152" y1="300" x2="208" y2="300" stroke="#ffffff" stroke-width="3" stroke-opacity="0.6"/>
+  <line x1="332" y1="272" x2="332" y2="328" stroke="#ffffff" stroke-width="3" stroke-opacity="0.6"/>
+  <line x1="304" y1="300" x2="360" y2="300" stroke="#ffffff" stroke-width="3" stroke-opacity="0.6"/>
+  
+  <!-- Chimney -->
+  <rect x="360" y="140" width="24" height="80" rx="2" fill="#c96e6e"/>
+  <rect x="356" y="132" width="32" height="8" rx="2" fill="#a85555"/>
+  
+  <!-- Small heart on door -->
+  <path d="M256 350 C250 345, 245 345, 245 350 C245 355, 250 360, 256 365 C262 360, 267 355, 267 350 C267 345, 262 345, 256 350 Z" fill="#ff6b6b" opacity="0.8"/>
+</svg>

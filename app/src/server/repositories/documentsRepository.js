@@ -84,3 +84,25 @@ export function deleteDocument(id, householdId) {
     where: { id, householdId },
   });
 }
+
+export function listDocumentsForExport(householdId) {
+  return prisma.document.findMany({
+    where: { householdId },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      category: true,
+      originalName: true,
+      mimeType: true,
+      sizeBytes: true,
+      expiryDate: true,
+      referenceType: true,
+      referenceId: true,
+      uploadedBy: { select: { id: true, name: true } },
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}

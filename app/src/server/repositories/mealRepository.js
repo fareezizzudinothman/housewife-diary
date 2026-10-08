@@ -74,3 +74,11 @@ export function snapshotRecipeTitles(householdId, recipeId, title) {
     data: { title },
   });
 }
+
+export function listMealsForExport(householdId) {
+  return prisma.mealPlanEntry.findMany({
+    where: { householdId },
+    include: ENTRY_INCLUDE,
+    orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
+  });
+}

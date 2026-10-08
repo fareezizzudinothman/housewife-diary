@@ -194,3 +194,15 @@ export function createAttachment(entryId, { originalName, storedName, mimeType, 
 export function deleteAttachment(id, entryId) {
   return prisma.diaryAttachment.delete({ where: { id, entryId } });
 }
+
+export function listEntriesForExport({ householdId, userId }) {
+  return prisma.diaryEntry.findMany({
+    where: { householdId, userId },
+    include: {
+      mood: { select: { id: true, name: true } },
+      tags: { include: { tag: { select: { id: true, name: true, normalized: true } } }, orderBy: { tag: { name: 'asc' } } },
+      _count: { select: { attachments: true } },
+    },
+    orderBy: [{ entryDate: 'desc' }, { timeOfDay: 'asc' }, { createdAt: 'asc' }],
+  });
+}

@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.45.0",
+    "canvas": "^3.2.3",
     "prisma": "^6.19.3"
   },
   "overrides": {

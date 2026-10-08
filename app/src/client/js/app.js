@@ -3,6 +3,28 @@ import { initShell } from './shell.js';
 
 initShell({ withUser: false }).catch(() => {});
 
+// Register service worker for PWA support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('[SW] Service Worker registered:', registration.scope);
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('[SW] New version available');
+              // Could show a toast to user here
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.error('[SW] Service Worker registration failed:', error);
+      });
+  });
+}
+
 const statusText = document.querySelector('#status-text');
 
 function setStatus(state, message) {
