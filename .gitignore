@@ -33,6 +33,12 @@ desktop.ini
 *.swo
 *~
 
+# Test artifacts
+test-results/
+playwright-report/
+playwright.config.ts
+cookies.txt
+
 # Misc
 tmp/
 .cache/
