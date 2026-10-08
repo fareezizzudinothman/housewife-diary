@@ -145,18 +145,6 @@ export async function addFromRecipe(req, res, next) {
   }
 }
 
-export async function previewFromMeals(req, res, next) {
-  try {
-    const result = await shoppingService.previewFromMeals({
-      householdId: req.householdId,
-      query: req.validated,
-    });
-    return sendSuccess(res, result);
-  } catch (error) {
-    return next(error);
-  }
-}
-
 export async function addFromMeals(req, res, next) {
   try {
     const result = await shoppingService.addFromMeals({

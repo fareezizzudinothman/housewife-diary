@@ -139,6 +139,9 @@ export function validateOptionalLine(value, field, maxLength, errors) {
 
 export function validateEnum(value, allowed, field, errors, { required = false } = {}) {
   if (value === undefined) {
+    if (required) {
+      errors.push(fieldError(field, `Choose a ${label(field)}.`));
+    }
     return { value: undefined, provided: false };
   }
   if (value === null || value === '') {
