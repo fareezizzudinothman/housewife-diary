@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Monthly financial report in Housewife Diary.">
+  <title>Monthly report — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Monthly report">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <a class="back-link" href="/pages/finance.html">← All finance</a>
+
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Money</p>
+            <h1 data-report-title>Monthly report</h1>
+            <p>Income, spending, budgets and bills for one month and currency.</p>
+          </div>
+        </div>
+
+        <section class="card card--flat" aria-label="Report period">
+          <form id="report-filters" class="filter-grid" novalidate>
+            <div class="field">
+              <label for="report-month">Month</label>
+              <input type="month" id="report-month" name="month">
+            </div>
+            <div class="field">
+              <label for="report-currency">Currency</label>
+              <select id="report-currency" name="currency"></select>
+            </div>
+            <div class="filter-grid__actions">
+              <button type="submit" class="btn btn--secondary btn--small">Apply</button>
+            </div>
+          </form>
+        </section>
+
+        <p id="report-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <section class="finance-summary" data-report-summary aria-label="Month totals"></section>
+
+        <section class="card" aria-label="Expense by category">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Expenses by category</h2>
+              <p>Where the money went this month</p>
+            </div>
+          </div>
+          <div class="report-bars" data-expense-categories></div>
+        </section>
+
+        <section class="card" aria-label="Budget vs actual">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Budget vs actual</h2>
+              <p data-budget-subtitle>Category budgets for this month</p>
+            </div>
+          </div>
+          <div class="report-bars" data-budgets></div>
+        </section>
+
+        <section class="card" aria-label="Upcoming bills">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Upcoming bills</h2>
+              <p data-bills-subtitle>Next unpaid bills</p>
+            </div>
+            <a class="btn btn--ghost btn--small" href="/pages/bills.html">All bills</a>
+          </div>
+          <div data-bills></div>
+        </section>
+
+        <section class="card" aria-label="Account balances">
+          <div class="card__head">
+            <div class="card__head-text">
+              <h2>Account balances</h2>
+              <p data-accounts-subtitle>Derived from the ledger</p>
+            </div>
+            <a class="btn btn--ghost btn--small" href="/pages/accounts.html">Accounts</a>
+          </div>
+          <div data-accounts></div>
+        </section>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/finance-report.js"></script>
+</body>
+</html>

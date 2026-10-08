@@ -7,14 +7,11 @@ import * as mealRepository from '../repositories/mealRepository.js';
 import * as shoppingRepository from '../repositories/shoppingRepository.js';
 import * as recipeRepository from '../repositories/recipeRepository.js';
 import * as inventoryService from './inventoryService.js';
+import * as financeService from './financeService.js';
 import { MEAL_ORDER, toMealSummaryView } from './mealService.js';
 import { DAY_MS } from '../utils/recurrence.js';
 import { getZonedNextStartOfDay, getZonedStartOfDay, toDateString } from '../utils/time.js';
 import { parseDateString } from '../validators/format.js';
-
-// Modules that are not implemented yet are reported explicitly so the
-// dashboard can render a graceful placeholder instead of fake data.
-const NOT_AVAILABLE_MODULES = ['finance'];
 
 const UPCOMING_EVENT_LIMIT = 3;
 const RECENT_TASK_LIMIT = 5;
@@ -83,6 +80,7 @@ export async function getDashboard({ user, householdId, householdRole }) {
     recipeCount,
     favouriteRecipes,
     inventoryAlerts,
+    finance,
   ] = await Promise.all([
     householdRepository.findById(householdId),
     householdMemberRepository.countByHouseholdIds([householdId]),
@@ -104,6 +102,7 @@ export async function getDashboard({ user, householdId, householdRole }) {
       timezone,
       limit: INVENTORY_ALERT_LIMIT,
     }),
+    financeService.getDashboardFinance({ user, householdId }),
   ]);
 
   const orderedTodayMeals = [...todayMeals].sort(
@@ -186,11 +185,8 @@ export async function getDashboard({ user, householdId, householdRole }) {
       count: recipeCount,
       favourites: favouriteRecipes.map((recipe) => ({ id: recipe.id, title: recipe.title })),
     },
+    finance,
   };
-
-  for (const moduleName of NOT_AVAILABLE_MODULES) {
-    dashboard[moduleName] = { status: 'not_available' };
-  }
 
   return dashboard;
 }

@@ -30,6 +30,15 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    title: 'Money',
+    items: [
+      { href: '/pages/finance.html', label: 'Finance', icon: 'wallet' },
+      { href: '/pages/budgets.html', label: 'Budgets', icon: 'target' },
+      { href: '/pages/bills.html', label: 'Bills', icon: 'calendar' },
+      { href: '/pages/accounts.html', label: 'Accounts', icon: 'credit-card' },
+    ],
+  },
+  {
     title: 'Settings',
     items: [
       { href: '/pages/appearance.html', label: 'Appearance', icon: 'palette' },

@@ -137,6 +137,8 @@ function buildDayRow(event) {
     title.href = `/pages/task-form.html?id=${encodeURIComponent(event.sourceId)}`;
   } else if (event.sourceType === 'MEAL') {
     title.href = `/pages/meal-form.html?id=${encodeURIComponent(event.sourceId)}`;
+  } else if (event.sourceType === 'BILL') {
+    title.href = '/pages/bills.html';
   } else {
     title.href = `/pages/event-form.html?id=${encodeURIComponent(event.id)}`;
   }
@@ -151,6 +153,9 @@ function buildDayRow(event) {
   }
   if (event.sourceType === 'MEAL') {
     parts.push('Meal');
+  }
+  if (event.sourceType === 'BILL') {
+    parts.push('Bill');
   }
   if (event.recurring) {
     parts.push('Repeats');

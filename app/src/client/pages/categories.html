@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Income and expense categories in Housewife Diary.">
+  <title>Categories — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Categories">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Money</p>
+            <h1>Categories</h1>
+            <p>Built-in categories plus your own — used by transactions, budgets and bills.</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn--primary" data-new-category disabled>New category</button>
+          </div>
+        </div>
+
+        <p id="categories-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div class="toolbar">
+          <label class="field--check">
+            <span class="field-label">Type</span>
+            <select data-type-filter>
+              <option value="">All types</option>
+              <option value="INCOME">Income</option>
+              <option value="EXPENSE">Expense</option>
+            </select>
+          </label>
+          <label class="field--check">
+            <input type="checkbox" data-include-archived>
+            Show archived
+          </label>
+        </div>
+
+        <div data-categories aria-live="polite"></div>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/categories.js"></script>
+</body>
+</html>

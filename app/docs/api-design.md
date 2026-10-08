@@ -141,8 +141,7 @@ Response `data`: `{ user, household, diary, tasks, calendar, meals, shopping, in
 - `shopping`: `activeList` (`id`, `name`, `itemCount`, `remaining`) or `null`.
 - `inventory`: `lowStockCount`, `outOfStockCount`, `expiringSoonCount`, `expiredCount` + `alerts` (up to three).
 - `recipes`: `count` + `favourites` (up to three `{ id, title }`).
-
-Only `finance` remains `status: 'not_available'`.
+- `finance`: current-month `income`/`expenses`/`net` (primary currency), `budgets` summary, `overdueBillCount` + `upcomingBills` (up to three); `status: 'empty'` until the household records any finance data.
 
 ### `/api/diary`
 
@@ -264,16 +263,81 @@ Full design: [shopping.md](shopping.md).
 
 Full design: [inventory.md](inventory.md).
 
+## Finance endpoints (implemented — Phase 7)
+
+All routes require a session and an active household (`requireHousehold`); every id resolves inside the active household only (`404` across households). Money fields are two-decimal **strings**. Writes are rate limited (`finance-write` 80/min, receipts `finance-upload` 15/min). Mounted at `/api/finance`.
+
+### `/api/finance/meta`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/meta` | session + household | Currencies, default currency, today, accounts, categories (materializes due recurring first) |
+
+### `/api/finance/accounts` and `/api/finance/categories`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/accounts` | session + household | List with **derived balance** (`movement` per account); `includeArchived`, `page`, `limit` |
+| POST | `/accounts` | session + household | `201 { account }`; ≤50 per household; rate limited |
+| GET | `/accounts/:id` | session + household | Detail |
+| PATCH | `/accounts/:id` | session + household | Name (duplicate → `409`), type, `openingBalance`, `active`; currency change → `409` once transactions exist |
+| POST | `/accounts/:id/archive` | session + household | Deactivates — history keeps the reference |
+| GET | `/categories` | session + household | Global seeds + household rows with `scope`, `active`, `transactionCount`; filters `type`, `includeArchived` |
+| POST | `/categories` | session + household | `201 { category }`; duplicate name → `409`; ≤100 per household |
+| PATCH | `/categories/:id` | session + household | Household rows; global seeds → `403` |
+| POST | `/categories/:id/archive` | session + household | Deactivates (never deletes referenced rows) |
+
+### `/api/finance/transactions`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `type`, `status` (`POSTED` default / `VOIDED` / `ALL`), `categoryId`, `accountId` (either side of a transfer), `sourceType`, `from`, `to`, `search`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { transaction }`; `EXPENSE`/`INCOME`/`TRANSFER`; transfers need equal-currency accounts and no category |
+| GET | `/:id` | session + household | Detail with resolved category/account/createdBy |
+| PATCH | `/:id` | session + household | Metadata only — changing money fields → `400` with void guidance |
+| POST | `/:id/void` | session + household | `{ reason }`; one-way `VOIDED`; reopens a bill if this paid one |
+| POST | `/:id/receipt` | session + household | Raw binary, `X-Filename`; JPEG/PNG/WebP/PDF by magic bytes, ≤5 MB; `201 { receipt }` |
+| GET | `/:id/receipt` | session + household | Private byte stream (`nosniff`) |
+| DELETE | `/:id/receipt` | session + household | Removes row and file |
+
+Full designs: [finance-transactions.md](finance-transactions.md), [finance.md](finance.md).
+
+### `/api/finance/budgets`, `/api/finance/bills`, `/api/finance/recurring`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/budgets` | session + household | `year`, `month`, `categoryId`, `page`, `limit` (≤100); items carry live `spent`/`percentUsed`/`overBudget` |
+| POST | `/budgets` | session + household | `201 { budget }` with derived spend; duplicate month/category → `409` |
+| GET/PATCH/DELETE | `/budgets/:id` | session + household | Detail / update `amount`+`notes` (re-derives spend; category/currency/period immutable) / delete (plan only) |
+| GET | `/bills` | session + household | `status` ∈ `UPCOMING\|DUE\|OVERDUE\|PAID\|CANCELLED\|ALL` (DUE/OVERDUE derived), `categoryId`, `search`, `page`, `limit` |
+| POST | `/bills` | session + household | `201 { bill }` with derived `status` |
+| GET/PATCH | `/bills/:id` | session + household | Unpaid bills are editable; paid → `409` |
+| POST | `/bills/:id/pay` | session + household | `201 { bill, transaction }`; atomic — duplicate → `409` |
+| POST | `/bills/:id/cancel` | session + household | Final for unpaid bills |
+| GET | `/recurring` | session + household | Rules with `generatedCount`, `nextOccurrence`; `active`, `type` filters |
+| POST | `/recurring` | session + household | `201 { recurring }`; `DAILY\|WEEKLY\|MONTHLY\|YEARLY` + `interval` 1–99 |
+| GET/PATCH | `/recurring/:id` | session + household | Detail / edit schedule or amounts |
+| POST | `/recurring/:id/pause` \| `/resume` | session + household | Stops/continues materialization (cursor preserved) |
+
+Full designs: [finance-budgets.md](finance-budgets.md), [finance-bills.md](finance-bills.md), [finance.md](finance.md).
+
+### `/api/finance/reports`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/reports/monthly` | session + household | `year`, `month`, `currency` → income/expenses/net, category breakdowns, budgets, bills, derived account balances |
+
+Bills also surface through `GET /api/calendar` as derived `sourceType: BILL` items (see [calendar.md](calendar.md)). Full design: [finance-reports.md](finance-reports.md).
+
 ## Planned endpoint map (future phases)
 
 | Phase | Base path | Endpoints (representative) |
 | --- | --- | --- |
-| 7 | `/api/expenses`, `/api/bills`, `/api/budgets` | CRUD, monthly report, spending analysis |
 | 8 | `/api/family`, `/api/home`, `/api/documents`, `/api/notes` | module CRUD |
 | 9 | `/api/notifications` | list, read, preferences; backup/export endpoints |
 | 10 | `/api/ai` | conversations, messages, tool-grounded responses |
 
-Phase 6 endpoints (`/api/recipes`, `/api/meals`, `/api/shopping-lists`, `/api/inventory`) are documented above.
+Phases 6 and 7 endpoints (`/api/recipes`, `/api/meals`, `/api/shopping-lists`, `/api/inventory`, `/api/finance/*`) are documented above.
 
 ## Versioning
 

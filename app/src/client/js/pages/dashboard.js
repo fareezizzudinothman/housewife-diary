@@ -4,6 +4,8 @@ import { icon } from '../components/icon.js';
 import { emptyState, loadingState, errorState } from '../components/states.js';
 import { describeError } from '../utils/forms.js';
 import { getDashboard } from '../api/dashboard.js';
+import { formatMoney } from '../utils/money.js';
+import { formatMonthYear } from '../utils/dates.js';
 
 /* Real dashboard — aggregates auth, household and diary data from
    /api/dashboard. Future modules render as explicit "coming soon"
@@ -74,7 +76,16 @@ const MODULES = [
     href: '/pages/calendar.html',
     meta: (module) => `${module.upcomingCount ?? 0} this week`,
   },
-  { key: 'finance', label: 'Finance', iconName: 'wallet' },
+  {
+    key: 'finance',
+    label: 'Finance',
+    iconName: 'wallet',
+    href: '/pages/finance.html',
+    meta: (module) =>
+      module.status === 'empty'
+        ? 'Track money'
+        : `${formatMoney(module.net, module.currency)} net`,
+  },
 ];
 
 function greetingForNow() {
@@ -275,6 +286,48 @@ function renderToday(dashboard) {
     }
   } else {
     panel.append(mutedLine('Stock looks good.'));
+  }
+
+  panel.append(sectionDivider());
+  panel.append(
+    sectionHeading(
+      `Finance — ${formatMonthYear(dashboard.finance.year, dashboard.finance.month - 1)}`,
+    ),
+  );
+  if (dashboard.finance.status !== 'empty') {
+    panel.append(
+      mutedLine(
+        `Income ${formatMoney(dashboard.finance.income, dashboard.finance.currency)} · expenses ${formatMoney(dashboard.finance.expenses, dashboard.finance.currency)} · net ${formatMoney(dashboard.finance.net, dashboard.finance.currency)}`,
+      ),
+    );
+    if (dashboard.finance.budgets.count > 0) {
+      const usage = dashboard.finance.budgets.percentUsed;
+      panel.append(
+        mutedLine(
+          usage === null
+            ? `${dashboard.finance.budgets.count} budgets tracked`
+            : `Budgets: ${usage}% used (${formatMoney(dashboard.finance.budgets.spent, dashboard.finance.currency)} of ${formatMoney(dashboard.finance.budgets.amount, dashboard.finance.currency)})`,
+        ),
+      );
+    }
+    if (dashboard.finance.upcomingBills.length > 0) {
+      const bill = dashboard.finance.upcomingBills[0];
+      const overdue = dashboard.finance.overdueBillCount;
+      panel.append(
+        mutedLine(
+          `Next bill: ${bill.name} ${formatMoney(bill.amount, bill.currency)} due ${formatDate(bill.dueDate)}${overdue ? ` · ${overdue} overdue` : ''}`,
+        ),
+      );
+    } else if (dashboard.finance.overdueBillCount > 0) {
+      panel.append(mutedLine(`${dashboard.finance.overdueBillCount} overdue bills`));
+    }
+    const link = document.createElement('a');
+    link.className = 'btn btn--ghost btn--small';
+    link.href = '/pages/finance.html';
+    link.textContent = 'Open finance';
+    panel.append(link);
+  } else {
+    panel.append(mutedLine('No finance activity yet.'));
   }
 }
 

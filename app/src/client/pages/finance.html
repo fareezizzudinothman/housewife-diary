@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Household finance in Housewife Diary.">
+  <title>Finance — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Finance">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Money</p>
+            <h1>Finance</h1>
+            <p>Income, expenses and transfers — one ledger, exact to the cent.</p>
+          </div>
+          <div class="page-head__actions">
+            <a class="btn btn--ghost" href="/pages/finance-report.html">Monthly report</a>
+            <a class="btn btn--primary" href="/pages/transaction-form.html">Add transaction</a>
+          </div>
+        </div>
+
+        <p id="finance-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <section class="finance-summary" data-summary aria-label="Month summary" aria-live="polite"></section>
+
+        <section class="card card--flat" aria-label="Filters">
+          <form id="finance-filters" class="filter-grid" novalidate>
+            <div class="field">
+              <label for="filter-month">Month</label>
+              <input type="month" id="filter-month" name="month">
+            </div>
+            <div class="field">
+              <label for="filter-currency">Currency</label>
+              <select id="filter-currency" name="currency"></select>
+            </div>
+            <div class="field">
+              <label for="filter-type">Type</label>
+              <select id="filter-type" name="type">
+                <option value="">All types</option>
+                <option value="INCOME">Income</option>
+                <option value="EXPENSE">Expense</option>
+                <option value="TRANSFER">Transfer</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-category">Category</label>
+              <select id="filter-category" name="categoryId">
+                <option value="">All categories</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-account">Account</label>
+              <select id="filter-account" name="accountId">
+                <option value="">All accounts</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-search">Search</label>
+              <input type="search" id="filter-search" name="search" maxlength="100" placeholder="Description or merchant…">
+            </div>
+            <div class="filter-grid__actions">
+              <button type="submit" class="btn btn--secondary btn--small">Apply</button>
+              <button type="button" class="btn btn--ghost btn--small" data-reset>Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <div class="toolbar">
+          <a class="btn btn--ghost btn--small" href="/pages/categories.html">Categories</a>
+          <a class="btn btn--ghost btn--small" href="/pages/recurring.html">Recurring</a>
+          <a class="btn btn--ghost btn--small" href="/pages/budgets.html">Budgets</a>
+          <a class="btn btn--ghost btn--small" href="/pages/bills.html">Bills</a>
+          <a class="btn btn--ghost btn--small" href="/pages/accounts.html">Accounts</a>
+        </div>
+
+        <div data-transactions aria-live="polite"></div>
+
+        <nav class="pager" data-pager hidden aria-label="Transaction pages">
+          <button type="button" class="btn btn--secondary btn--small" data-page-prev>Previous</button>
+          <span class="pager__label" data-page-label></span>
+          <button type="button" class="btn btn--secondary btn--small" data-page-next>Next</button>
+        </nav>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/finance.js"></script>
+</body>
+</html>
