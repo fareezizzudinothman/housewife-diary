@@ -13,7 +13,7 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 | 4 | Dashboard and diary | **Complete** |
 | 5 | Tasks and calendar | **Complete** |
 | 6 | Meals, recipes, shopping, inventory | **Complete** |
-| 7 | Finance, expenses, bills, budgets, reports | Planned |
+| 7 | Finance, expenses, bills, budgets, reports | **Complete** |
 | 8 | Family, home management, home inventory, documents | Planned |
 | 9 | Notifications, PWA, backup, export | Planned |
 | 10 | AI assistant and household automation | Planned |
@@ -154,9 +154,35 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 - `docker compose up -d --build` healthy; `/api/health` returns `success: true`; recipes/meals/shopping/inventory/dashboard/calendar smoke-tested through the container.
 - Browser-verified with Playwright (9-step serial flow): register → recipe → meal → calendar, shopping list + item → purchase → shopping → inventory, inventory consume/low stock/expiry, recipe scaling, meal-plan → shopping, dashboard, no console/API errors, no horizontal overflow at 1360/1024/820/768/480/375 px.
 
+## Phase 7 — Finance (delivered)
+
+**Scope:**
+
+- Sixth and seventh Prisma migrations: `finance_core` (7 tables + 7 enums: `finance_accounts`, `finance_categories`, `financial_transactions`, `finance_receipts`, `finance_budgets`, `finance_bills`, `finance_recurring_transactions`) and `finance_seed_categories` (17 global category seeds with `household_id NULL`); later `finance_recurrence_daily` adds the `DAILY` frequency.
+- **Ledger model:** one `financial_transactions` table for `EXPENSE`/`INCOME`/`TRANSFER` as positive magnitudes; `POSTED`/`VOIDED` one-way status; immutable money fields on `PATCH`; transfers require equal-currency accounts and never enter income/expense totals; derived account balances (`opening + income − expense ± transfers`).
+- **Accounts and categories:** CRUD + archive (never hard-deleted once referenced), household isolation, global read-only seed catalog, duplicate guards (`409`), per-household caps (50/100).
+- **Budgets:** monthly category targets with unique `(household, category, period, year, month)`; spend/remaining/percent/over-budget **derived at read time** — create/update responses carry the live spend.
+- **Bills:** stored `UPCOMING/PAID/CANCELLED` with derived `DUE`/`OVERDUE`; **atomic payment** (`payBillAtomically`: status recheck + linked `EXPENSE` + unique `paid_transaction_id` in one transaction; duplicate → `409`); payment overrides validated in bill currency; voiding the payment reopens the bill atomically; cancel is final; `bill.paid`/`bill.cancelled` audit events.
+- **Recurring transactions:** structured `DAILY|WEEKLY|MONTHLY|YEARLY` rules + interval 1–99 with `nextOccurrence` cursor; bounded materialization (≤ 60 rows/run, only up to today, shared `utils/recurrence.js` engine); unique `(recurringTransactionId, transactionDate)`; pause/resume/edit.
+- **Receipts:** reuse of the raw-binary upload architecture — ≤5 MB, magic-byte JPEG/PNG/WebP/PDF detection, server-generated names under `uploads/finance/`, authenticated private streaming, `finance-upload` rate limit.
+- **Monthly reports + dashboard:** PostgreSQL aggregations for income/expenses/net, category breakdowns with percentages/ranks, budget vs actual, bill summary, derived account balances; dashboard `finance` section replaces `not_available` with real data.
+- **Calendar integration:** unpaid bills surface as derived read-only `sourceType: BILL` items through the existing source abstraction (nothing persisted to `calendar_events`).
+- **Client:** eight pages (`finance`, `transaction-form`, `accounts`, `categories`, `budgets`, `bills`, `recurring`, `finance-report`) with a Money nav group, shared modal/table/state components, money/date utils and a minimalist finance CSS block on existing theme tokens.
+- Tests: 63 new server tests (223 total) across eight finance suites plus the updated dashboard contract.
+
+**Out of scope (intentionally deferred):** FX conversion/multi-currency transfers, credit-card statement flows, split transactions, multiple receipts per transaction, non-monthly budget periods, automatic bill regeneration from the recurring flag, notification delivery (Phase 9).
+
+**Design:** [finance.md](finance.md), [finance-transactions.md](finance-transactions.md), [finance-budgets.md](finance-budgets.md), [finance-bills.md](finance-bills.md), [finance-reports.md](finance-reports.md), [architecture.md](architecture.md), [database-design.md](database-design.md), [api-design.md](api-design.md).
+
+### Completion criteria (met)
+
+- `npm test` passes (223 tests) including all eight finance suites, the calendar-derived-bill test and the updated dashboard contract.
+- Migrations `finance_core`, `finance_seed_categories`, `finance_recurrence_daily` applied; `prisma migrate status` reports an up-to-date schema.
+- `docker compose up -d --build` healthy; `/api/health` returns `success: true`; a 20-check finance smoke run through the container passes (exact totals, derived balances, duplicate-payment `409`, receipt roundtrip, report/dashboard equality).
+- Browser-verified with Playwright (9-step serial flow): accounts → category/budget → bills + payment + calendar → expense/income/transfer → recurring → receipt → report → dashboard; no console/API errors; no horizontal overflow at 1360/1024/820/768/480/375 px. Phase 6 E2E regression: 9/9 still passing.
+
 ## Later phases (summary scope)
 
-- **Phase 7:** expenses, income, categories, budgets, bills, receipts, monthly reports.
 - **Phase 8:** family members/events, cleaning & house management, home assets/warranties, documents, notes, ideas.
 - **Phase 9:** notification center, PWA, backup/export.
 - **Phase 10:** AI assistant over the tool layer.

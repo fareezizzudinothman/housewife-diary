@@ -2,12 +2,12 @@
 
 A warm, modern household management web application — a personal digital household companion for diary, tasks, meals, shopping, inventory, finances, family and home.
 
-> **Status:** Phase 0–6 (architecture + foundation + authentication/household management + UI foundation/theme engine + dashboard/diary + tasks/calendar + meals/recipes/shopping/inventory) complete.
-> The API server, PostgreSQL and Prisma are connected and verified; users can register, sign in, manage households, customize the app's appearance (nine themes, light/dark/system modes), read their dashboard, write diary entries with photos, plan tasks and calendar events, keep recipes with structured ingredients, plan meals, run shopping lists (including recipe/meal-plan import) and track pantry inventory with a full stock ledger. Remaining modules arrive phase by phase — see [docs/implementation-plan.md](docs/implementation-plan.md).
+> **Status:** Phase 0–7 (architecture + foundation + authentication/household management + UI foundation/theme engine + dashboard/diary + tasks/calendar + meals/recipes/shopping/inventory + finance) complete.
+> The API server, PostgreSQL and Prisma are connected and verified; users can register, sign in, manage households, customize the app's appearance (nine themes, light/dark/system modes), read their dashboard, write diary entries with photos, plan tasks and calendar events, keep recipes with structured ingredients, plan meals, run shopping lists (including recipe/meal-plan import) and track pantry inventory with a full stock ledger — and now manage money: accounts and categories, an income/expense/transfer ledger with exact Decimal arithmetic, budgets, bills with atomic payment, recurring transactions, private receipts, monthly reports and a finance-aware dashboard. Remaining modules arrive phase by phase — see [docs/implementation-plan.md](docs/implementation-plan.md).
 
 ## Modules
 
-**Delivered:** authentication and household management, appearance/themes, dashboard (real aggregation — no mock data), diary (timeline, search and filters, moods, tags, photo attachments), tasks (categories, assignment, views, recurring tasks), calendar (all-day/timed events, ranged month view, task-derived items), and the kitchen flow — recipes with structured ingredients, weekly meal planner (with calendar integration), shopping lists (recipe scaling, meal-plan import, purchase tracking, shopping → inventory) and household inventory (transaction ledger, derived stock/expiry status, low-stock alerts).
+**Delivered:** authentication and household management, appearance/themes, dashboard (real aggregation — no mock data), diary (timeline, search and filters, moods, tags, photo attachments), tasks (categories, assignment, views, recurring tasks), calendar (all-day/timed events, ranged month view, task-, meal- and bill-derived items), the kitchen flow — recipes with structured ingredients, weekly meal planner (with calendar integration), shopping lists (recipe scaling, meal-plan import, purchase tracking, shopping → inventory) and household inventory (transaction ledger, derived stock/expiry status, low-stock alerts) — and finance (accounts, categories, income/expense/transfer ledger, monthly budgets, bills with atomic payment, recurring transactions, receipts, monthly reports, dashboard summary).
 
 **Planned (phase by phase):**
 
@@ -15,7 +15,7 @@ A warm, modern household management web application — a personal digital house
 | --- | --- |
 | Personal | Diary, mood tracking, notes, ideas, documents |
 | Household | Tasks, recurring tasks, calendar, cleaning, laundry, maintenance |
-| Money | Expenses, income, budgets, bills, receipts, reports |
+| Money | Multi-currency conversion, credit-card statements, split transactions, forecasts |
 | People | Family members, family events, household roles |
 | Home | Home inventory, appliances, warranties |
 | Platform | Authentication, dashboard, notifications, themes, PWA, backup/export |
@@ -194,6 +194,11 @@ docker compose down
 - [Meals module](docs/meals.md)
 - [Shopping module](docs/shopping.md)
 - [Inventory module](docs/inventory.md)
+- [Finance module](docs/finance.md)
+- [Finance transactions](docs/finance-transactions.md)
+- [Finance budgets](docs/finance-budgets.md)
+- [Finance bills](docs/finance-bills.md)
+- [Finance reports](docs/finance-reports.md)
 - [Theme system and UI design system](docs/theme-system.md)
 - [Development workflow](docs/development-workflow.md)
 - [AI architecture (Phase 10 plan)](docs/ai-architecture.md)
@@ -209,7 +214,7 @@ docker compose down
 | 4 | Dashboard and diary | Complete |
 | 5 | Tasks and calendar | Complete |
 | 6 | Meals, recipes, shopping, inventory | Complete |
-| 7 | Finance, bills, budgets, reports | Planned |
+| 7 | Finance, bills, budgets, reports | Complete |
 | 8 | Family, home management, home inventory, documents | Planned |
 | 9 | Notifications, PWA, backup/export | Planned |
 | 10 | AI assistant and household automation | Planned |

@@ -97,6 +97,29 @@ Inventory item + quantity ledger (derived stock/expiry status → dashboard aler
 - **Cross-module ownership:** all four modules are household-scoped from the session; recipe/meal ids from another household resolve to `404` and can never be referenced into a list.
 - Full designs: [recipes.md](recipes.md), [meals.md](meals.md), [shopping.md](shopping.md), [inventory.md](inventory.md).
 
+## Finance ledger (Phase 7)
+
+Finance is a ledger-oriented module layered on the same rules (`validators → repositories → services → controllers → routes`, mounted at `/api/finance`):
+
+```text
+Accounts (one currency each)        Categories (global seeds + household)
+        │                                   │
+        └──────────► financial_transactions ◄────── sourceType: BILL / RECURRING
+                     (single shared ledger:          ▲            ▲
+                      EXPENSE · INCOME · TRANSFER)   │            │
+                        │                    payBillAtomically   bounded
+                        ▼                             (atomic)    materialization
+              derived balances · budgets · bills · recurring rules · receipts · reports
+```
+
+- **One table for money movement:** `financial_transactions` holds income, expenses and transfers as positive magnitudes with a `type`; direction, not sign, carries meaning. Transfers require equal-currency accounts and are excluded from income/expense totals.
+- **Decimal everywhere:** `Decimal(14,2)` columns, Prisma `Decimal` arithmetic (`utils/money.js`), two-decimal strings over the wire — JavaScript floats never touch an amount.
+- **Derived, never stored:** account balances (`opening + income − expense ± transfers`), bill `DUE`/`OVERDUE` status, budget spend/percent, report and dashboard aggregates (PostgreSQL `groupBy` sums).
+- **Atomic compound writes** live in repository transactions: `payBillAtomically` (bill + linked expense + unique payment guard) and `voidTransactionAtomically` (void + bill reopen). Services never patch across two money tables.
+- **Bounded recurrence** reuses the shared engine (`utils/recurrence.js`, same as Tasks/Calendar): structured `DAILY|WEEKLY|MONTHLY|YEARLY` rules materialize ledger rows only up to today, ≤ 60 per run, with a unique `(recurringTransactionId, transactionDate)` guard — no unbounded row generation.
+- **Calendar integration** follows the existing source abstraction: unpaid bills become derived read-only `sourceType: BILL` items — no new calendar tables, no persisted duplicates. Dashboard finance is real aggregation; the `not_available` flag for finance was removed.
+- Full design: [finance.md](finance.md), [finance-transactions.md](finance-transactions.md), [finance-budgets.md](finance-budgets.md), [finance-bills.md](finance-bills.md), [finance-reports.md](finance-reports.md).
+
 ## AI assistant (Phase 10)
 
 The assistant never receives database access. It sits above a tool layer of allow-listed, household-scoped functions (`getTasks`, `createMeal`, `analyseExpenses`, …) that call the same application services used by the REST API, so authentication and household isolation apply automatically. See [ai-architecture.md](ai-architecture.md).

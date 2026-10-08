@@ -1,6 +1,6 @@
 # Database design
 
-PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. Migrations so far: `20261007041913_auth_core` (Phase 2, identity tables), `20261007052226_theme_preferences` (Phase 3, theme tables), `20261007071119_diary_core` (Phase 4, diary tables + mood seeds), `20261007084410_tasks_core` (Phase 5, tasks + calendar tables) and `20261007100833_meals_shopping_inventory` (Phase 6, recipes + meals + shopping + inventory tables).
+PostgreSQL accessed exclusively through Prisma. The schema is **grown phase by phase** — this document is the design reference; tables are only created when their phase begins. Migrations so far: `20261007041913_auth_core` (Phase 2, identity tables), `20261007052226_theme_preferences` (Phase 3, theme tables), `20261007071119_diary_core` (Phase 4, diary tables + mood seeds), `20261007084410_tasks_core` (Phase 5, tasks + calendar tables), `20261007100833_meals_shopping_inventory` (Phase 6, recipes + meals + shopping + inventory tables), `20261008024333_finance_core` + `20261008024415_finance_seed_categories` (Phase 7, finance tables + 17 global category seeds) and `20261008040419_finance_recurrence_daily` (adds `DAILY` to the finance recurrence enum).
 
 ## Principles
 
@@ -137,14 +137,78 @@ Enums: `meal_type` (`BREAKFAST|LUNCH|SNACK|DINNER`), `item_category` (nine share
 - Statuses (stock level, expiry) are **derived at read time**, never stored — see [inventory.md](inventory.md).
 - Full design: [recipes.md](recipes.md), [meals.md](meals.md), [shopping.md](shopping.md), [inventory.md](inventory.md).
 
+## Finance model (Phase 7 — implemented)
+
+```text
+finance_accounts      id, household_id (FK, cascade), created_by_id (FK users, cascade),
+                      name, normalized, type (CASH|BANK|CREDIT_CARD|E_WALLET|OTHER),
+                      currency Char(3), opening_balance Decimal(14,2), active, timestamps
+                      — unique (household_id, normalized); index (household_id, active)
+
+finance_categories    id, household_id (FK, nullable — NULL = global seed), name, normalized,
+                      type (INCOME|EXPENSE), icon, active, sort_order, timestamps
+                      — unique (household_id, type, normalized); index (household_id, type, active)
+
+financial_transactions id, household_id (FK, cascade), created_by_id (FK, cascade),
+                      type (EXPENSE|INCOME|TRANSFER), status (POSTED|VOIDED),
+                      amount Decimal(14,2) — positive magnitude, currency Char(3),
+                      category_id (FK, SET NULL), account_id (FK, SET NULL),
+                      counter_account_id (FK, SET NULL), transaction_date (DATE),
+                      description, merchant, notes,
+                      source_type (MANUAL|BILL|RECURRING), source_id,
+                      recurring_transaction_id (FK, SET NULL),
+                      voided_at, voided_by_id (FK, SET NULL), void_reason, timestamps
+                      — unique (recurring_transaction_id, transaction_date)
+                      — indexes (household_id, transaction_date DESC),
+                        (household_id, type, transaction_date),
+                        (household_id, category_id, transaction_date),
+                        (household_id, account_id), (household_id, status),
+                        (household_id, source_type, source_id)
+
+finance_receipts      id, transaction_id (unique FK, cascade), original_name,
+                      stored_name (unique, server-generated), mime_type, size_bytes, created_at
+                      — one receipt per transaction; bytes under uploads/finance/
+
+finance_budgets       id, household_id (FK, cascade), created_by_id (FK, cascade),
+                      category_id (FK, Restrict), period (MONTHLY), amount Decimal(14,2),
+                      currency, year, month, notes, timestamps
+                      — unique (household_id, category_id, period, year, month)
+
+finance_bills         id, household_id (FK, cascade), created_by_id (FK, cascade),
+                      name, amount Decimal(14,2), currency, due_date (DATE),
+                      category_id (FK, Restrict), account_id (FK, SetNull),
+                      status (UPCOMING|PAID|CANCELLED — stored only), recurring Bool,
+                      notes, paid_at, paid_transaction_id (unique FK, SetNull),
+                      cancelled_at, timestamps
+                      — indexes (household_id, due_date), (household_id, status),
+                        (household_id, category_id)
+
+finance_recurring_transactions id, household_id (FK, cascade), created_by_id (FK, cascade),
+                      type (INCOME|EXPENSE), amount Decimal(14,2), currency,
+                      category_id (FK, Restrict), account_id (FK, SetNull),
+                      description, merchant, notes,
+                      frequency (DAILY|WEEKLY|MONTHLY|YEARLY), interval, start_date (DATE),
+                      end_date (DATE), next_occurrence (DATE), active, timestamps
+                      — indexes (household_id, active), (household_id, next_occurrence)
+```
+
+Enums: `finance_account_type`, `finance_category_type`, `finance_transaction_type` (`EXPENSE|INCOME|TRANSFER`), `finance_transaction_status` (`POSTED|VOIDED`), `finance_source_type` (`MANUAL|BILL|RECURRING`), `finance_budget_period` (`MONTHLY`), `finance_bill_status` (`UPCOMING|PAID|CANCELLED`), `finance_recurrence_frequency` (`DAILY|WEEKLY|MONTHLY|YEARLY`).
+
+Design decisions:
+
+- **One ledger table** for income, expenses and transfers — no split ledgers to reconcile; direction comes from `type`, amounts stay positive.
+- **No balance column anywhere:** balances, bill DUE/OVERDUE status, budget spend and report totals are derived at read time (a denormalized balance could only drift).
+- **Nullable `household_id` on categories** is the global-seed mechanism (unique per household+type+normalized; global rows are unique per `household_id = NULL` too, matching the seed ids).
+- `category_id`/`account_id` are `SET NULL` so deleting/renaming never orphans money; `category_id` on budgets/bills/recurring is `Restrict` (plans and obligations must keep their reference).
+- `paid_transaction_id` is **unique** — the database itself forbids two payments linking to one bill; the status check runs in the same transaction.
+- `paidBill`, `receipt` are one-to-one relations off a transaction (at most one receipt, at most one paid bill per row).
+- Money columns are all `Decimal(14,2)`; `transaction_date`/`due_date`/`start_date` are true `DATE` columns (date-only semantics independent of timezone).
+- Full design: [finance.md](finance.md) and the finance companion documents.
+
 ## Planned entity map by module
 
 | Module | Tables | Highlights |
 | --- | --- | --- |
-| Meals (P6) | `recipes`, `recipe_ingredients`, `meal_plan_entries` | structured ingredients; meal slots by date; recipe reference with title snapshot |
-| Shopping (P6) | `shopping_lists`, `shopping_list_items` | purchased timestamp, recipe/meal-plan merge by normalized name + unit |
-| Inventory (P6) | `inventory_items`, `inventory_transactions` | location, quantity, minimum stock, expiry; full transaction ledger with `quantity_after` |
-| Finance (P7) | `expenses`, `expense_categories`, `budgets`, `bills`, `receipts` | expenses/income via signed amount or type flag; budgets per category/period; bills recurring rules |
 | Family (P8) | `family_members`, `family_events` | household profiles (may or may not be users), birthdays/important dates |
 | House mgmt (P8) | `home_areas`, `cleaning_tasks`, `maintenance_records` | areas (kitchen/bathroom/garden…), schedules, history |
 | Home inventory (P8) | `home_assets`, `warranties` | purchase dates, warranty docs linked to `documents` |

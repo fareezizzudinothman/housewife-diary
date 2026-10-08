@@ -6,10 +6,10 @@ Household calendar with native events and a read-only view over other modules' d
 
 - Native event CRUD: title, notes, all-day or timed start/end, category, location, reminder settings and a simple recurrence rule.
 - Ranged queries: one endpoint returns everything visible in a date range, expanded in memory.
-- **Task ↔ calendar integration:** tasks with a due date appear as derived, read-only calendar items (`sourceType: "TASK"`) — never persisted as event rows.
+- **Cross-module derived items:** tasks with a due date (`sourceType: "TASK"`), planned meals (`"MEAL"`) and unpaid bills due in range (`"BILL"`) appear as read-only calendar items — never persisted as event rows.
 - Month grid client with day selection and a compact day panel.
 
-Out of scope (later phases): notifications/reminder delivery, external calendar sync, bills/birthdays integration (the `sourceType` enum is the extension point).
+Out of scope (later phases): notifications/reminder delivery, external calendar sync, birthdays/family/maintenance sources (the `sourceType` enum remains the extension point).
 
 ## Source abstraction
 
@@ -20,8 +20,8 @@ source_type: MANUAL | TASK | DIARY | BILL | FAMILY | MAINTENANCE | MEAL | SHOPPI
 ```
 
 - Native events are stored with `source_type = MANUAL` and `source_id = NULL`.
-- Derived items are **computed at query time** and never stored: currently `TASK` (tasks with `due_at` inside the range, status not `CANCELLED`). Their `id` is namespaced (`task:<taskId>`) so it can never collide with a real event id; fetching such an id from `/api/calendar/:id` returns `404`.
-- `DIARY`, `BILL`, `FAMILY`, `MEAL`, `SHOPPING` etc. are reserved for later phases and remain unpersisted by design.
+- Derived items are **computed at query time** and never stored — currently `TASK` (tasks with `due_at` inside the range, status not `CANCELLED`), `MEAL` (planned meals in range, nominal slot hour) and `BILL` (unpaid bills whose due date falls inside the range, all-day; paid/cancelled bills disappear). Their ids are namespaced (`task:<taskId>`, `meal:<entryId>`, `bill:<billId>`) so they can never collide with a real event id; fetching such an id from `/api/calendar/:id` returns `404`.
+- `DIARY`, `FAMILY`, `MAINTENANCE`, `SHOPPING`, `APPOINTMENT` etc. are reserved for later phases and remain unpersisted by design.
 
 ## Data model
 
@@ -46,7 +46,7 @@ calendar_events   id, household_id (FK, cascade), created_by_id (FK users),
 - Missing bounds default to the current local month; `from` alone extends to the end of that month, `to` alone starts at the beginning of that month.
 - Non-recurring events overlap the window when `start_at <= end-of-range` and `end_at > start-of-range` (half-open, so an event ending exactly at local midnight belongs to the previous day only).
 - Recurring events are expanded within the window; each instance preserves the original duration and reports `recurring: true` with the series `id`.
-- Task items are included when their `due_at` falls inside the window; date-only tasks are reported with `allDay: true` (end-of-local-day convention from [tasks.md](tasks.md)).
+- Task items are included when their `due_at` falls inside the window; date-only tasks are reported with `allDay: true` (end-of-local-day convention from [tasks.md](tasks.md)). Meal items use their slot's nominal hour (`allDay: true`); bill items are all-day on the due date with a `bill` detail block ([finance-bills.md](finance-bills.md)).
 - The whole response is sorted by `startAt`, then title. Ranges are capped at **366 days** (`400` beyond) to keep expansion bounded.
 - `to < from` is a `400`.
 
@@ -78,4 +78,4 @@ Updates are partial. Changing kind without new dates re-anchors the stored insta
 
 ## Testing
 
-`tests/calendar.test.js` (10 tests) covers: 401/403, cross-household 404s, timed create + reminder shape, per-field validation (missing title/start, inverted/mismatched bounds, bad category/reminder), all-day single/multi-day events and impossible dates, partial updates with duration preservation and all-day toggling, range queries (overlap, from-only default, inverted/too-long/invalid dates), recurring expansion with end dates, task-derived items (all-day and timed, cancelled excluded), and timezone-aware day boundaries on a UTC+7 user. Client flows are verified with a Playwright script (month view, day selection, event create, overflow checks at 1360/820/375 px).
+`tests/calendar.test.js` (10 tests) covers: 401/403, cross-household 404s, timed create + reminder shape, per-field validation (missing title/start, inverted/mismatched bounds, bad category/reminder), all-day single/multi-day events and impossible dates, partial updates with duration preservation and all-day toggling, range queries (overlap, from-only default, inverted/too-long/invalid dates), recurring expansion with end dates, task-derived items (all-day and timed, cancelled excluded), and timezone-aware day boundaries on a UTC+7 user. Bill-derived items are covered in `tests/finance-bills.test.js` (derived `BILL` entries, paid/cancelled excluded, `bill:` id → 404, cross-household empty). Client flows are verified with a Playwright script (month view, day selection, event create, overflow checks at 1360/820/375 px).
