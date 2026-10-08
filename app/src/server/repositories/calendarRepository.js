@@ -76,3 +76,11 @@ export function listUpcomingEvents(householdId, from, to, limit) {
     take: limit,
   });
 }
+
+export function listEventsForExport(householdId) {
+  return prisma.calendarEvent.findMany({
+    where: { householdId },
+    include: EVENT_INCLUDE,
+    orderBy: { startAt: 'asc' },
+  });
+}

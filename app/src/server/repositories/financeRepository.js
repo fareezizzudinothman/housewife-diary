@@ -752,4 +752,17 @@ export function countHouseholdTransactions(householdId) {
   return prisma.financialTransaction.count({ where: { householdId } });
 }
 
+export async function exportFinanceData(householdId) {
+  const [accounts, categories, transactions, budgets, bills, recurring] = await Promise.all([
+    prisma.financeAccount.findMany({ where: { householdId }, orderBy: { createdAt: 'asc' } }),
+    prisma.financeCategory.findMany({ where: { OR: [{ householdId }, { householdId: null }] }, orderBy: [{ type: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }] }),
+    prisma.financialTransaction.findMany({ where: { householdId }, include: { category: { select: { id: true, name: true, type: true } }, account: { select: { id: true, name: true } }, counterAccount: { select: { id: true, name: true } } }, orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }] }),
+    prisma.financeBudget.findMany({ where: { householdId }, include: { category: { select: { id: true, name: true, type: true } } }, orderBy: [{ year: 'desc' }, { month: 'desc' }] }),
+    prisma.financeBill.findMany({ where: { householdId }, include: { category: { select: { id: true, name: true, type: true } }, account: { select: { id: true, name: true } } }, orderBy: [{ dueDate: 'asc' }, { createdAt: 'asc' }] }),
+    prisma.financeRecurringTransaction.findMany({ where: { householdId }, include: { category: { select: { id: true, name: true, type: true } }, account: { select: { id: true, name: true } } }, orderBy: [{ nextOccurrence: 'asc' }, { createdAt: 'asc' }] }),
+  ]);
+
+  return { accounts, categories, transactions, budgets, bills, recurring };
+}
+
 export { PARTY_SELECT };

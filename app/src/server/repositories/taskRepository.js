@@ -296,3 +296,11 @@ export function listRecentOpenTasks(householdId, limit) {
     take: limit,
   });
 }
+
+export function listTasksForExport(householdId) {
+  return prisma.task.findMany({
+    where: { householdId },
+    include: TASK_INCLUDE,
+    orderBy: [{ dueAt: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
+  });
+}

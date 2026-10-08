@@ -312,3 +312,30 @@ export function listMaintenanceInRange(householdId, { from, to }) {
     orderBy: { scheduledDate: 'asc' },
   });
 }
+
+export async function exportHomeData(householdId) {
+  const [rooms, cleaning, laundry, maintenance] = await Promise.all([
+    prisma.room.findMany({
+      where: { householdId },
+      select: { id: true, name: true, description: true, active: true, createdAt: true, updatedAt: true },
+      orderBy: [{ active: 'desc' }, { createdAt: 'asc' }],
+    }),
+    prisma.cleaningDefinition.findMany({
+      where: { householdId },
+      include: { room: { select: { id: true, name: true } }, assignedFamilyMember: { select: { id: true, name: true } } },
+      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+    }),
+    prisma.laundryItem.findMany({
+      where: { householdId },
+      select: { id: true, category: true, status: true, scheduledDate: true, notes: true, createdAt: true, updatedAt: true },
+      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+    }),
+    prisma.maintenance.findMany({
+      where: { householdId },
+      include: { room: { select: { id: true, name: true } } },
+      orderBy: [{ status: 'asc' }, { scheduledDate: 'asc' }],
+    }),
+  ]);
+
+  return { rooms, cleaning, laundry, maintenance };
+}

@@ -180,3 +180,20 @@ export function countRemainingForHousehold(householdId) {
     where: { purchasedAt: null, list: { householdId, archivedAt: null } },
   });
 }
+
+export function listShoppingForExport(householdId) {
+  return prisma.shoppingList.findMany({
+    where: { householdId },
+    include: {
+      items: {
+        include: { recipe: { select: { id: true, title: true } } },
+        orderBy: [
+          { purchasedAt: { sort: 'asc', nulls: 'first' } },
+          { category: 'asc' },
+          { normalized: 'asc' },
+        ],
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
+}

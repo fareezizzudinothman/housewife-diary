@@ -18,6 +18,8 @@ import homeRoutes from './home.routes.js';
 import documentsRoutes from './documents.routes.js';
 import notesRoutes from './notes.routes.js';
 import ideasRoutes from './ideas.routes.js';
+import notificationsRoutes from './notifications.routes.js';
+import exportRoutes from './export.routes.js';
 
 const router = Router();
 
@@ -40,5 +42,7 @@ router.use('/home', homeRoutes);
 router.use('/documents', documentsRoutes);
 router.use('/notes', notesRoutes);
 router.use('/ideas', ideasRoutes);
+router.use('/notifications', notificationsRoutes);
+router.use('/export', exportRoutes);
 
 export default router;

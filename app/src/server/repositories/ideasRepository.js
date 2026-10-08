@@ -82,3 +82,11 @@ export function updateIdea(id, householdId, data) {
 export function deleteIdea(id, householdId) {
   return prisma.idea.deleteMany({ where: { id, householdId } });
 }
+
+export function listIdeasForExport(householdId) {
+  return prisma.idea.findMany({
+    where: { householdId },
+    select: IDEA_SELECT,
+    orderBy: [{ status: 'asc' }, { priority: 'desc' }, { createdAt: 'desc' }],
+  });
+}

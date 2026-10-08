@@ -379,6 +379,7 @@ model User {
   documentsUploaded       Document[]                    @relation("DocumentUploader")
   notesCreated            Note[]                        @relation("NoteCreator")
   ideasCreated            Idea[]                        @relation("IdeaCreator")
+  notifications           Notification[]
 
   @@map("users")
 }
@@ -438,6 +439,7 @@ model Household {
   notes                 Note[]
   noteTags              NoteTag[]
   ideas                 Idea[]
+  notifications         Notification[]
 
   @@index([ownerUserId])
   @@map("households")
@@ -1454,4 +1456,55 @@ model Idea {
 
   @@index([householdId, status])
   @@map("ideas")
+}
+
+// Phase 9 — notifications (see docs/notifications.md).
+//
+// A per-user, household-scoped in-app notification. Generated from existing
+// domain events (tasks, bills, inventory, documents, family, maintenance) via
+// a notification service. Never stores duplicate events; deduplication keyed
+// by (userId, type, sourceType, sourceId).
+enum NotificationType {
+  TASK_DUE
+  TASK_OVERDUE
+  BILL_DUE
+  BILL_OVERDUE
+  INVENTORY_EXPIRING
+  INVENTORY_EXPIRED
+  DOCUMENT_EXPIRING
+  DOCUMENT_EXPIRED
+  FAMILY_BIRTHDAY
+  MAINTENANCE_DUE
+
+  @@map("notification_type")
+}
+
+model Notification {
+  id          String          @id @default(cuid())
+  householdId String          @map("household_id")
+  userId      String          @map("user_id")
+  type        NotificationType
+  // Human-readable title for the notification center.
+  title       String
+  // Optional detail message.
+  message     String?
+  // Polymorphic reference to the source entity that triggered the notification.
+  sourceType  String          @map("source_type")
+  sourceId    String          @map("source_id")
+  // Deduplication key — ensures one notification per event per user.
+  dedupeKey   String          @map("dedupe_key")
+  readAt      DateTime?       @map("read_at")
+  archivedAt  DateTime?       @map("archived_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([householdId, type])
+  @@map("notifications")
 }

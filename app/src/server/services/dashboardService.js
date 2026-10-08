@@ -11,6 +11,7 @@ import * as financeService from './financeService.js';
 import * as familyRepository from '../repositories/familyRepository.js';
 import * as homeRepository from '../repositories/homeRepository.js';
 import * as documentsRepository from '../repositories/documentsRepository.js';
+import * as notificationRepository from '../repositories/notificationRepository.js';
 import { MEAL_ORDER, toMealSummaryView } from './mealService.js';
 import { DAY_MS } from '../utils/recurrence.js';
 import { getZonedNextStartOfDay, getZonedStartOfDay, toDateString } from '../utils/time.js';
@@ -119,6 +120,7 @@ export async function getDashboard({ user, householdId, householdRole }) {
     dueCleaningCount,
     laundryCounts,
     expiringDocumentCount,
+    unreadNotificationCount,
   ] = await Promise.all([
     householdRepository.findById(householdId),
     householdMemberRepository.countByHouseholdIds([householdId]),
@@ -161,6 +163,7 @@ export async function getDashboard({ user, householdId, householdRole }) {
       todayDate,
       new Date(todayDate.getTime() + DOCUMENT_EXPIRY_HORIZON_DAYS * DAY_MS),
     ),
+    notificationRepository.countUnread(user.id),
   ]);
 
   const orderedTodayMeals = [...todayMeals].sort(
@@ -256,6 +259,10 @@ export async function getDashboard({ user, householdId, householdRole }) {
       favourites: favouriteRecipes.map((recipe) => ({ id: recipe.id, title: recipe.title })),
     },
     finance,
+    notifications: {
+      status: unreadNotificationCount > 0 ? 'available' : 'empty',
+      unreadCount: unreadNotificationCount,
+    },
     family: {
       status: familyMemberCount > 0 ? 'available' : 'empty',
       memberCount: familyMemberCount,

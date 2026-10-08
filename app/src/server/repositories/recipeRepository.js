@@ -123,3 +123,11 @@ export function listFavouriteRecipes(householdId, limit) {
     take: limit,
   });
 }
+
+export function listRecipesForExport(householdId) {
+  return prisma.recipe.findMany({
+    where: { householdId },
+    include: DETAIL_INCLUDE,
+    orderBy: { updatedAt: 'desc' },
+  });
+}

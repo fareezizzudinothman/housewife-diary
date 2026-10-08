@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Export household data in Housewife Diary.">
+  <title>Export Data — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Export Data">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <div class="page-head">
+          <div class="page-head__text">
+            <a class="back-link" href="/pages/dashboard.html">
+              <span data-icon="chevron-left" data-icon-size="sm"></span>
+              Back to Dashboard
+            </a>
+            <h1>Export Data</h1>
+            <p>Download a complete backup of your household data.</p>
+          </div>
+        </div>
+
+        <section class="card" aria-labelledby="export-options-heading">
+          <h2 id="export-options-heading">Export Options</h2>
+          <p class="card__description">Choose what data to include in your export. All data is scoped to your active household.</p>
+          
+          <form id="export-form" class="form" novalidate>
+            <fieldset class="field">
+              <legend>Format</legend>
+              <div class="field field--check">
+                <input type="radio" id="format-json" name="format" value="json" checked>
+                <label for="format-json">JSON (complete data with full structure)</label>
+              </div>
+              <div class="field field--check">
+                <input type="radio" id="format-csv" name="format" value="csv">
+                <label for="format-csv">CSV (tabular data, one file per module)</label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field">
+              <legend>Data to Include</legend>
+              <div class="field field--check">
+                <input type="checkbox" id="include-diary" name="includeDiary" checked>
+                <label for="include-diary">Diary entries</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-tasks" name="includeTasks" checked>
+                <label for="include-tasks">Tasks</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-calendar" name="includeCalendar" checked>
+                <label for="include-calendar">Calendar events</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-recipes" name="includeRecipes" checked>
+                <label for="include-recipes">Recipes</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-meals" name="includeMeals" checked>
+                <label for="include-meals">Meal plans</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-shopping" name="includeShopping" checked>
+                <label for="include-shopping">Shopping lists</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-inventory" name="includeInventory" checked>
+                <label for="include-inventory">Inventory</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-finance" name="includeFinance" checked>
+                <label for="include-finance">Finance (accounts, transactions, budgets, bills)</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-family" name="includeFamily" checked>
+                <label for="include-family">Family members & events</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-home" name="includeHome" checked>
+                <label for="include-home">Home (rooms, cleaning, laundry, maintenance)</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-documents" name="includeDocuments" checked>
+                <label for="include-documents">Documents (metadata only, not file content)</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-notes" name="includeNotes" checked>
+                <label for="include-notes">Notes</label>
+              </div>
+              <div class="field field--check">
+                <input type="checkbox" id="include-ideas" name="includeIdeas" checked>
+                <label for="include-ideas">Ideas</label>
+              </div>
+            </fieldset>
+
+            <p class="field-hint">Note: Document files are not included in the export. Only document metadata is exported. To backup document files, use the file download feature on the Documents page.</p>
+
+            <p class="form-status" id="export-status" role="status" aria-live="polite"></p>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn--primary" data-submit>Generate Export</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="import-heading">
+          <h2 id="import-heading">Import / Restore</h2>
+          <p class="card__description">Data import is not yet implemented. This feature is planned for a future phase.</p>
+          <div class="card__description" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--color-text-muted);">
+            <strong>Planned features:</strong>
+            <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+              <li>JSON import with validation</li>
+              <li>Dry-run preview before applying</li>
+              <li>Conflict resolution (skip/merge/replace)</li>
+              <li>Selective module restore</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/export.js"></script>
+</body>
+</html>

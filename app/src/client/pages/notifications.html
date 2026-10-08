@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Notifications in Housewife Diary.">
+  <title>Notifications — Housewife Diary</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#c96e6e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Housewife Diary">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Notifications">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Platform</p>
+            <h1>Notifications</h1>
+            <p>In-app alerts for tasks, bills, inventory, documents, and family events.</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn--secondary" data-mark-all-read hidden>Mark all read</button>
+          </div>
+        </div>
+
+        <section class="card card--flat" aria-label="Filters">
+          <form id="notification-filters" class="filter-grid" novalidate>
+            <div class="field">
+              <label for="filter-unread">Show</label>
+              <select id="filter-unread" name="unreadOnly">
+                <option value="false">All notifications</option>
+                <option value="true">Unread only</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-archived">Include archived</label>
+              <select id="filter-archived" name="includeArchived">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+            <div class="filter-grid__actions">
+              <button type="submit" class="btn btn--secondary btn--small">Apply</button>
+              <button type="button" class="btn btn--ghost btn--small" data-reset>Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <p id="notification-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div data-notification-list aria-live="polite"></div>
+
+        <nav class="pager" data-pager hidden aria-label="Notification pages">
+          <button type="button" class="btn btn--secondary btn--small" data-page-prev>Previous</button>
+          <span class="pager__label" data-page-label></span>
+          <button type="button" class="btn btn--secondary btn--small" data-page-next>Next</button>
+        </nav>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/notifications.js"></script>
+</body>
+</html>

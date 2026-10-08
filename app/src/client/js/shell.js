@@ -18,6 +18,7 @@ const NAV_SECTIONS = [
       { href: '/pages/tasks.html', label: 'Tasks', icon: 'list-checks' },
       { href: '/pages/calendar.html', label: 'Calendar', icon: 'calendar' },
       { href: '/pages/household.html', label: 'Household', icon: 'users' },
+      { href: '/pages/notifications.html', label: 'Notifications', icon: 'info' },
     ],
   },
   {
@@ -67,6 +68,7 @@ const NAV_SECTIONS = [
     items: [
       { href: '/pages/appearance.html', label: 'Appearance', icon: 'palette' },
       { href: '/pages/profile.html', label: 'Profile', icon: 'user' },
+      { href: '/pages/export.html', label: 'Export Data', icon: 'arrow-right' },
     ],
   },
 ];
@@ -136,6 +138,10 @@ function renderChrome() {
       <a class="app-topbar__brand" href="/">${icon('brand')}<span>Housewife Diary</span></a>
       <span class="app-topbar__title">${document.body.dataset.pageTitle ?? ''}</span>
       <div class="app-topbar__actions">
+        <button type="button" class="icon-btn" data-notification-toggle aria-label="Notifications">
+          ${icon('info')}
+          <span class="notification-badge" data-unread-badge hidden></span>
+        </button>
         <button type="button" class="icon-btn" data-sidebar-toggle aria-label="Toggle navigation rail">${icon('menu')}</button>
         ${themeToggleMarkup()}
         <div class="dropdown" data-dropdown>
@@ -148,11 +154,11 @@ function renderChrome() {
             </div>
             <a class="dropdown__item" href="/pages/profile.html">${icon('user')} Profile</a>
             <a class="dropdown__item" href="/pages/appearance.html">${icon('palette')} Appearance</a>
+            <a class="dropdown__item" href="/pages/notifications.html">${icon('info')} Notifications</a>
             <div class="dropdown__divider"></div>
             <button type="button" class="dropdown__item dropdown__item--danger" data-signout>${icon('log-out')} Sign out</button>
           </div>
-        </div>
-      </div>`;
+        </div>`;
   }
 
   const sidebar = document.querySelector('[data-shell="sidebar"]');
