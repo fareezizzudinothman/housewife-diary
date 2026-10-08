@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Monthly budgets in Housewife Diary.">
+  <title>Budgets — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Budgets">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Money</p>
+            <h1>Budgets</h1>
+            <p>Set a monthly ceiling per category; actual spending comes from your ledger.</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn--primary" data-new-budget disabled>New budget</button>
+          </div>
+        </div>
+
+        <p id="budgets-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div class="toolbar">
+          <label class="field--check">
+            <span class="field-label">Month</span>
+            <input type="month" data-month-filter>
+          </label>
+          <label class="field--check">
+            <input type="checkbox" data-all-months>
+            All months
+          </label>
+        </div>
+
+        <div data-budgets aria-live="polite"></div>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/budgets.js"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Cleaning schedules in Housewife Diary.">
+  <title>Cleaning — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Cleaning">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <a class="back-link" href="/pages/home.html">
+              <span data-icon="chevron-left" data-icon-size="sm"></span>
+              Back to Home
+            </a>
+            <p class="eyebrow">Home</p>
+            <h1>Cleaning</h1>
+            <p>Recurring cleaning schedules by room.</p>
+          </div>
+          <div class="page-head__actions">
+            <a class="btn btn--primary" href="/pages/cleaning.html?new=1">Add schedule</a>
+          </div>
+        </div>
+
+        <section class="card card--flat" aria-label="Filters">
+          <form id="cleaning-filters" class="filter-grid" novalidate>
+            <div class="field">
+              <label for="filter-status">Status</label>
+              <select id="filter-status" name="status">
+                <option value="ACTIVE">Active</option>
+                <option value="PAUSED">Paused</option>
+                <option value="">All</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-room">Room</label>
+              <select id="filter-room" name="roomId">
+                <option value="">All rooms</option>
+              </select>
+            </div>
+            <div class="filter-grid__actions">
+              <button type="submit" class="btn btn--secondary btn--small">Apply</button>
+              <button type="button" class="btn btn--ghost btn--small" data-reset>Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <p id="cleaning-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <div data-cleaning-list aria-live="polite"></div>
+
+        <nav class="pager" data-pager hidden aria-label="Cleaning pages">
+          <button type="button" class="btn btn--secondary btn--small" data-page-prev>Previous</button>
+          <span class="pager__label" data-page-label></span>
+          <button type="button" class="btn btn--secondary btn--small" data-page-next>Next</button>
+        </nav>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/cleaning.js"></script>
+</body>
+</html>

@@ -8,7 +8,7 @@ REST over HTTP, JSON only, mounted under `/api`. All endpoints follow the conven
 - **Auth:** every private route requires an authenticated session (HTTP-only cookie); authorization resolves the active household server-side. Unauthenticated → `401 UNAUTHORIZED`; wrong household/role → `403 FORBIDDEN`; cross-household resource ids → `404 NOT_FOUND` (no existence leaks).
 - **Validation:** request bodies/queries validated in `src/server/validators` before controllers act; failures return `400 VALIDATION_ERROR` with per-field `details`.
 - **Rate limiting:** applied to auth endpoints (login/register/reset/verification, per IP and per account), then to write endpoints generally.
-- **Pagination:** list endpoints (from Phase 4) accept `page`/`limit` and return `{ items, page, limit, total }` inside the standard success envelope.
+- **Pagination:** list endpoints (see `/api/diary`) accept `page`/`limit` and return `{ items, page, limit, total }` inside the standard success envelope.
 - **Time:** ISO-8601 strings in UTC; dates as `YYYY-MM-DD`.
 
 ## Response envelopes
@@ -39,6 +39,7 @@ Error:
 | Code | HTTP | Meaning |
 | --- | --- | --- |
 | `VALIDATION_ERROR` | 400 | Malformed/invalid input (incl. invalid JSON bodies) |
+| `VALIDATION_ERROR` | 413 | Request body exceeds the route's size limit (e.g. 5 MB uploads) |
 | `UNAUTHORIZED` | 401 | Missing/expired session or bad credentials |
 | `FORBIDDEN` | 403 | Authenticated but not allowed (role/household) |
 | `NOT_FOUND` | 404 | Resource does not exist (also used to avoid leaking existence) |
@@ -123,20 +124,404 @@ All routes below enforce the double-submit CSRF token on unsafe methods.
 
 Override validation, the allowlist and the response shapes are specified in [theme-system.md](theme-system.md).
 
+## Dashboard and diary endpoints (implemented — Phase 4)
+
+### `/api/dashboard`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | Aggregated overview; `403` when the user has no active household |
+
+Response `data`: `{ user, household, diary, tasks, calendar, meals, shopping, inventory, recipes, finance }`. Each implemented module reports `status: 'available'` with its own summary or `status: 'empty'`:
+
+- `diary`: `count` + `recent` (five content-free items).
+- `tasks`: `openCount`, `dueTodayCount` + `recent` (five open tasks).
+- `calendar`: `upcomingCount` (next 7 days) + `next` (up to three events inside that window).
+- `meals`: `today[]` + `next` (meal summaries with `displayTitle`).
+- `shopping`: `activeList` (`id`, `name`, `itemCount`, `remaining`) or `null`.
+- `inventory`: `lowStockCount`, `outOfStockCount`, `expiringSoonCount`, `expiredCount` + `alerts` (up to three).
+- `recipes`: `count` + `favourites` (up to three `{ id, title }`).
+- `finance`: current-month `income`/`expenses`/`net` (primary currency), `budgets` summary, `overdueBillCount` + `upcomingBills` (up to three); `status: 'empty'` until the household records any finance data.
+
+### `/api/diary`
+
+All routes require a session and an active household (`requireHousehold`). Entries are scoped to `{ householdId, userId }` — other members' entries never resolve (`404`).
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/meta` | session + household | Mood catalog + my tag list (registered before `/:id`) |
+| GET | `/` | session + household | List: `search`, `from`, `to`, `mood`, `tag`, `page`, `limit` (≤50) → `{ items, page, limit, total, totalPages }` |
+| POST | `/` | session + household | `201 { entry }`; rate limited (`diary-write`) |
+| GET | `/:id` | session + household | Detail = list shape + `content` + `attachments[]` |
+| PATCH | `/:id` | session + household | Partial update; unknown mood/invalid fields → `400` |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }`; cascades tags/attachments and unlinks files |
+| POST | `/:id/attachments` | session + household | Raw binary body, `X-Filename` header; `201 { attachment }`; ≤5 per entry, 5 MB, `diary-upload` rate limit |
+| GET | `/:id/attachments/:attachmentId` | session + household | Streams bytes (`nosniff`, private cache); `?download=1` forces download |
+| DELETE | `/:id/attachments/:attachmentId` | session + household | Removes row and file |
+
+List items carry `excerpt` (whitespace-collapsed, 160 chars) and `attachmentCount`; `content` appears only on the detail endpoint. Ordering is `entryDate DESC, timeOfDay ASC, createdAt ASC`. Request bodies over 5 MB return `413 VALIDATION_ERROR`. Full design: [diary.md](diary.md).
+
+## Tasks and calendar endpoints (implemented — Phase 5)
+
+Both modules require a session and an active household (`requireHousehold`); every id resolves inside the active household only (`404` across households).
+
+### `/api/tasks`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/meta` | session + household | Category options + household members (for assignment) |
+| GET | `/categories` | session + household | Categories with task counts |
+| POST | `/categories` | session + household | `201 { category }`; duplicate name → `409`; rate limited (`tasks-write`) |
+| DELETE | `/categories/:id` | session + household | `200 { id, deleted: true }`; tasks keep existing with no category |
+| GET | `/` | session + household | List: `view`, `status`, `priority`, `category`, `assignee`, `search`, `sort`, `dir`, `page`, `limit` (≤50) → `{ items, page, limit, total, totalPages }` |
+| POST | `/` | session + household | `201 { task }`; a recurrence rule creates the series head and its first materialized window |
+| GET | `/:id` | session + household | Detail (same shape as list items) |
+| PATCH | `/:id` | session + household | Partial update; changing a head's due date/rule regenerates open occurrences |
+| POST | `/:id/complete` | session + household | Sets `COMPLETED` + `completedAt` |
+| DELETE | `/:id` | session + household | Deletes the task; deleting a series head cascades its occurrences. `?series=true` on an occurrence deletes the whole series |
+
+`view` ∈ `today \| upcoming \| overdue \| completed \| all` (default `all`); `sort` ∈ `due \| priority \| created`; `dir` ∈ `asc \| desc` (defaults: due → asc, otherwise desc). List items carry `recurrence`, `seriesId`, `repeating`, `category`, `assignee` and `createdBy`. Full design: [tasks.md](tasks.md).
+
+### `/api/calendar`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | Ranged read: `from`/`to` (`YYYY-MM-DD`, user-timezone days; missing bounds default to the current month, max 366 days) → `{ events, from, to }`, sorted by `startAt` |
+| POST | `/` | session + household | `201 { event }`; rate limited (`calendar-write`) |
+| GET | `/:id` | session + household | Native event detail (`404` for derived `task:` ids) |
+| PATCH | `/:id` | session + household | Partial update; all-day ↔ timed conversion keeps wall-clock days |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }` |
+
+Range responses mix native events (`sourceType: MANUAL`), recurring expansions (`recurring: true`), and read-only task-derived items (`sourceType: TASK`, id `task:<taskId>`). Full design: [calendar.md](calendar.md).
+
+## Recipes, meals, shopping and inventory endpoints (implemented — Phase 6)
+
+All four modules require a session and an active household (`requireHousehold`); every id resolves inside the active household only (`404` across households). Shared kitchen vocabulary (meal types, item categories, inventory locations, units, decimals) lives in `validators/kitchen.js`.
+
+### `/api/recipes`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/meta` | session + household | Distinct categories in use (registered before `/:id`) |
+| GET | `/` | session + household | List: `search`, `category`, `favourite`, `sort` ∈ `updated\|created\|title`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { recipe }`; structured `ingredients[]`; rate limited (`recipes-write`) |
+| GET | `/:id` | session + household | Detail with ordered ingredients + `createdBy` |
+| PATCH | `/:id` | session + household | Partial; supplying `ingredients` replaces the list, `[]` clears it |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }`; planned meals keep the title as a snapshot |
+| POST | `/:id/favourite` | session + household | Sets the favourite flag |
+| DELETE | `/:id/favourite` | session + household | Clears the favourite flag |
+| POST | `/:id/duplicate` | session + household | `201 { recipe }`; optional `{ title }`; ingredients copied |
+
+Full design: [recipes.md](recipes.md).
+
+### `/api/meals`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/shopping-plan` | session + household | Read-only aggregation of planned recipe ingredients (`from`/`to`, same range rules) |
+| GET | `/` | session + household | Range read: `from`/`to` (default current Monday–Sunday week, max 90 days), `mealType`; sorted by date then slot |
+| POST | `/` | session + household | `201 { meal }`; requires `recipeId` or `title`; rate limited (`meals-write`) |
+| GET | `/:id` | session + household | Detail with `displayTitle` and resolved `recipe` |
+| PATCH | `/:id` | session + household | Partial; must keep at least one of `recipeId`/`title` |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }` |
+
+Meals also surface through `GET /api/calendar` as derived all-day items (`sourceType: MEAL`, id `meal:<entryId>`). Full design: [meals.md](meals.md).
+
+### `/api/shopping-lists`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `search`, `archived`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { list }`; rate limited (`shopping-write`) |
+| GET | `/:id/items` | session + household | Items: `search`, `purchased`, `category`, `page`, `limit` (≤200) |
+| POST | `/:id/items` | session + household | `201 { item }` |
+| PATCH | `/:id/items/:itemId` | session + household | Partial; `purchased` toggle stamps/clears `purchasedAt` |
+| DELETE | `/:id/items/:itemId` | session + household | `200 { id, deleted: true }` |
+| POST | `/:id/items/:itemId/to-inventory` | session + household | `201 { item, inventoryItem, merged }`; records a `PURCHASE` and marks the line bought |
+| POST | `/:id/from-recipe/:recipeId` | session + household | `201 { list, added, merged, items }`; optional `{ servings }` scales quantities |
+| POST | `/:id/from-meals` | session + household | `201 { list, added, merged }`; `{ from, to, items? }` commits the reviewed selection or the live plan |
+| GET | `/:id` | session + household | List detail with `itemCount` + `remaining` |
+| PATCH | `/:id` | session + household | Rename/notes/archive |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }`; items cascade |
+
+Full design: [shopping.md](shopping.md).
+
+### `/api/inventory`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `search`, `category`, `location`, `stock`, `expiry`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { item }`; opening `quantity > 0` records a `PURCHASE`; rate limited (`inventory-write`) |
+| GET | `/:id` | session + household | Detail with derived `status`/`expiryStatus` |
+| PATCH | `/:id` | session + household | Metadata only — `quantity` is rejected |
+| DELETE | `/:id` | session + household | `200 { id, deleted: true }`; ledger cascades |
+| POST | `/:id/consume` | session + household | `200 { item, transaction }`; `CONSUME`, rejects negative stock |
+| POST | `/:id/waste` | session + household | `200 { item, transaction }`; `WASTE` |
+| POST | `/:id/add-stock` | session + household | `200 { item, transaction }`; `PURCHASE` |
+| POST | `/:id/adjust` | session + household | `200 { item, transaction }`; `ADJUST` sets the absolute value |
+| GET | `/:id/transactions` | session + household | Ledger, newest first, `page`/`limit` (≤100) |
+
+Full design: [inventory.md](inventory.md).
+
+## Finance endpoints (implemented — Phase 7)
+
+All routes require a session and an active household (`requireHousehold`); every id resolves inside the active household only (`404` across households). Money fields are two-decimal **strings**. Writes are rate limited (`finance-write` 80/min, receipts `finance-upload` 15/min). Mounted at `/api/finance`.
+
+### `/api/finance/meta`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/meta` | session + household | Currencies, default currency, today, accounts, categories (materializes due recurring first) |
+
+### `/api/finance/accounts` and `/api/finance/categories`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/accounts` | session + household | List with **derived balance** (`movement` per account); `includeArchived`, `page`, `limit` |
+| POST | `/accounts` | session + household | `201 { account }`; ≤50 per household; rate limited |
+| GET | `/accounts/:id` | session + household | Detail |
+| PATCH | `/accounts/:id` | session + household | Name (duplicate → `409`), type, `openingBalance`, `active`; currency change → `409` once transactions exist |
+| POST | `/accounts/:id/archive` | session + household | Deactivates — history keeps the reference |
+| GET | `/categories` | session + household | Global seeds + household rows with `scope`, `active`, `transactionCount`; filters `type`, `includeArchived` |
+| POST | `/categories` | session + household | `201 { category }`; duplicate name → `409`; ≤100 per household |
+| PATCH | `/categories/:id` | session + household | Household rows; global seeds → `403` |
+| POST | `/categories/:id/archive` | session + household | Deactivates (never deletes referenced rows) |
+
+### `/api/finance/transactions`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `type`, `status` (`POSTED` default / `VOIDED` / `ALL`), `categoryId`, `accountId` (either side of a transfer), `sourceType`, `from`, `to`, `search`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { transaction }`; `EXPENSE`/`INCOME`/`TRANSFER`; transfers need equal-currency accounts and no category |
+| GET | `/:id` | session + household | Detail with resolved category/account/createdBy |
+| PATCH | `/:id` | session + household | Metadata only — changing money fields → `400` with void guidance |
+| POST | `/:id/void` | session + household | `{ reason }`; one-way `VOIDED`; reopens a bill if this paid one |
+| POST | `/:id/receipt` | session + household | Raw binary, `X-Filename`; JPEG/PNG/WebP/PDF by magic bytes, ≤5 MB; `201 { receipt }` |
+| GET | `/:id/receipt` | session + household | Private byte stream (`nosniff`) |
+| DELETE | `/:id/receipt` | session + household | Removes row and file |
+
+Full designs: [finance-transactions.md](finance-transactions.md), [finance.md](finance.md).
+
+### `/api/finance/budgets`, `/api/finance/bills`, `/api/finance/recurring`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/budgets` | session + household | `year`, `month`, `categoryId`, `page`, `limit` (≤100); items carry live `spent`/`percentUsed`/`overBudget` |
+| POST | `/budgets` | session + household | `201 { budget }` with derived spend; duplicate month/category → `409` |
+| GET/PATCH/DELETE | `/budgets/:id` | session + household | Detail / update `amount`+`notes` (re-derives spend; category/currency/period immutable) / delete (plan only) |
+| GET | `/bills` | session + household | `status` ∈ `UPCOMING\|DUE\|OVERDUE\|PAID\|CANCELLED\|ALL` (DUE/OVERDUE derived), `categoryId`, `search`, `page`, `limit` |
+| POST | `/bills` | session + household | `201 { bill }` with derived `status` |
+| GET/PATCH | `/bills/:id` | session + household | Unpaid bills are editable; paid → `409` |
+| POST | `/bills/:id/pay` | session + household | `201 { bill, transaction }`; atomic — duplicate → `409` |
+| POST | `/bills/:id/cancel` | session + household | Final for unpaid bills |
+| GET | `/recurring` | session + household | Rules with `generatedCount`, `nextOccurrence`; `active`, `type` filters |
+| POST | `/recurring` | session + household | `201 { recurring }`; `DAILY\|WEEKLY\|MONTHLY\|YEARLY` + `interval` 1–99 |
+| GET/PATCH | `/recurring/:id` | session + household | Detail / edit schedule or amounts |
+| POST | `/recurring/:id/pause` \| `/resume` | session + household | Stops/continues materialization (cursor preserved) |
+
+Full designs: [finance-budgets.md](finance-budgets.md), [finance-bills.md](finance-bills.md), [finance.md](finance.md).
+
+### `/api/finance/reports`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/reports/monthly` | session + household | `year`, `month`, `currency` → income/expenses/net, category breakdowns, budgets, bills, derived account balances |
+
+Bills also surface through `GET /api/calendar` as derived `sourceType: BILL` items (see [calendar.md](calendar.md)). Full design: [finance-reports.md](finance-reports.md).
+
 ## Planned endpoint map (future phases)
 
 | Phase | Base path | Endpoints (representative) |
 | --- | --- | --- |
-| 4 | `/api/dashboard` | daily overview aggregate |
-| 4 | `/api/diary` | entries CRUD, search, tags, attachments, mood |
-| 5 | `/api/tasks` | tasks CRUD, complete, categories, templates, recurrences |
-| 5 | `/api/calendar` | events CRUD, ranged queries |
-| 6 | `/api/meals`, `/api/recipes` | meal plans, recipes with ingredients, favorites |
-| 6 | `/api/shopping`, `/api/inventory` | lists/items/purchase, items/transactions/low-stock |
-| 7 | `/api/expenses`, `/api/bills`, `/api/budgets` | CRUD, monthly report, spending analysis |
-| 8 | `/api/family`, `/api/home`, `/api/documents`, `/api/notes` | module CRUD |
+| 8 | `/api/family`, `/api/home`, `/api/documents`, `/api/notes`, `/api/ideas` | module CRUD |
 | 9 | `/api/notifications` | list, read, preferences; backup/export endpoints |
 | 10 | `/api/ai` | conversations, messages, tool-grounded responses |
+
+Phases 6, 7 and 8 endpoints are documented below.
+
+## Family endpoints (implemented — Phase 8)
+
+All routes require a session and an active household (`requireHousehold`); every id resolves inside the active household only (`404` across households).
+
+### `/api/family/members`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `search`, `includeArchived`, `page`, `limit` (≤50) → `{ items, page, limit, total, totalPages }` |
+| POST | `/` | session + household | `201 { member }`; name, relationship, optional dateOfBirth, linkedUserId, notes; rate limited (`family-write`) |
+| GET | `/:id` | session + household | Detail with linkedUser if present |
+| PATCH | `/:id` | session + household | Partial update; at least one field required |
+| DELETE | `/:id` | session + household | Archive (soft delete); `200 { id, archived: true }` |
+
+### `/api/family/events`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `from`, `to` (date range), `memberId`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { event }`; title, kind, eventDate, optional memberId, repeatsYearly, notes; rate limited (`family-write`) |
+| GET | `/:id` | session + household | Detail with member if linked |
+| PATCH | `/:id` | session + household | Partial update |
+| DELETE | `/:id` | session + household | Hard delete; `200 { id, deleted: true }` |
+
+### `/api/family/meta`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | Member count, event count, upcoming birthdays |
+
+### Calendar & Dashboard Integration
+
+- Family events → Calendar as derived `sourceType: FAMILY` (all-day, `recurring: true` if `repeatsYearly`).
+- Member birthdays → Calendar as derived `sourceType: FAMILY` (all-day, yearly, `kind: "Birthday"`).
+- Dashboard `family` section: member count, upcoming birthdays (next 90 days).
+
+## Home Management endpoints (implemented — Phase 8)
+
+All routes require a session and an active household (`requireHousehold`); every id resolves inside the active household only (`404` across households).
+
+### `/api/home/rooms`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `search`, `active`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { room }`; name, description; rate limited (`home-write`) |
+| GET | `/:id` | session + household | Detail with cleaning/maintenance counts |
+| PATCH | `/:id` | session + household | Partial update; at least one field |
+| DELETE | `/:id` | session + household | Archive (soft delete) |
+
+### `/api/home/cleaning`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `status`, `roomId`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { schedule }`; roomId, title, frequency (DAILY/WEEKLY/MONTHLY), interval, status, assignedFamilyMemberId, notes; rate limited (`home-write`) |
+| GET | `/:id` | session + household | Detail with room, assignee, nextDue |
+| PATCH | `/:id` | session + household | Partial update |
+| DELETE | `/:id` | session + household | Hard delete |
+
+### `/api/home/laundry`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `status`, `category`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { laundry }`; category, scheduledDate, notes; rate limited (`home-write`) |
+| GET | `/:id` | session + household | Detail |
+| PATCH | `/:id` | session + household | Partial update |
+| DELETE | `/:id` | session + household | Hard delete |
+
+### `/api/home/maintenance`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `status`, `roomId`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { maintenance }`; title, category, scheduledDate, priority, status, roomId, description, transactionId, notes; rate limited (`home-write`) |
+| GET | `/:id` | session + household | Detail with room |
+| PATCH | `/:id` | session + household | Partial update |
+| DELETE | `/:id` | session + household | Hard delete |
+| POST | `/:id/task` | session + household | Generate a Task from maintenance; `201 { task }`; sets maintenance status to `IN_PROGRESS` |
+
+### Calendar & Task Integration
+
+- Maintenance items → Calendar as derived `sourceType: MAINTENANCE` (all-day on `scheduledDate`).
+- `POST /api/home/maintenance/:id/task` → generates a Task (title = maintenance title, category = maintenance category, priority = maintenance priority, notes include room/description).
+
+### Dashboard Integration
+
+Dashboard `home` section: room count, overdue maintenance count, due cleaning count, laundry status summary, expiring document count.
+
+## Documents endpoints (implemented — Phase 8)
+
+All routes require a session and an active household (`requireHousehold`); every id resolves inside the active household only (`404` across households).
+
+### `/api/documents`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `search`, `category`, `status` (ACTIVE/EXPIRING_SOON/EXPIRED), `referenceType`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | Upload: raw binary body + query params (`title`, `description`, `category`, `expiryDate`, `referenceType`, `referenceId`); headers `X-Filename`, `Content-Type` (magic-byte verified); ≤5 MB; rate limited (`documents-upload`) |
+| GET | `/:id` | session + household | Metadata detail |
+| PATCH | `/:id` | session + household | Update metadata only (title, description, category, expiryDate, referenceType, referenceId) |
+| DELETE | `/:id` | session + household | Delete document and file |
+| GET | `/:id/file` | session + household | Private stream (inline view or `?download=1`); `nosniff` header |
+
+### Upload Request
+
+```
+POST /api/documents?title=Insurance&category=INSURANCE&expiryDate=2026-12-31
+Headers:
+  X-CSRF-Token: <token>
+  X-Filename: policy.pdf
+  Content-Type: application/pdf
+Body: <raw PDF binary>
+```
+
+- File type verified by magic bytes (JPEG, PNG, WebP, PDF only)
+- Metadata (title, category, expiry, references) via query string
+- `referenceType` ∈ `MAINTENANCE`, `FINANCE_TRANSACTION`, `INVENTORY`, `FAMILY_MEMBER`
+- File served privately via `GET /api/documents/:id/file` (authenticated, `nosniff`)
+
+### Dashboard Integration
+
+Dashboard `home.documents`: expiring soon count, expired count.
+
+## Notes endpoints (implemented — Phase 8)
+
+All routes require a session and an active household (`requireHousehold`); every id resolves inside the active household only (`404` across households).
+
+### `/api/notes`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/tags` | session + household | Unique tag list in household |
+| GET | `/` | session + household | List: `search`, `category`, `tag`, `pinned`, `archived`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { note }`; title, content, category, tags[], pinned, archived; rate limited (`notes-write`) |
+| GET | `/:id` | session + household | Detail |
+| PATCH | `/:id` | session + household | Partial update (any field including tags replacement) |
+| DELETE | `/:id` | session + household | Hard delete |
+
+### Notes vs Diary
+
+Notes are topic-based reference material (tags, pin, archive, search). Diary is date-based personal journal (mood, attachments, daily entries). Separate tables, separate APIs, no data overlap.
+
+## Ideas endpoints (implemented — Phase 8)
+
+All routes require a session and an active household (`requireHousehold`); every id resolves inside the active household only (`404` across households).
+
+### `/api/ideas`
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | session + household | List: `search`, `category`, `status`, `page`, `limit` (≤50) |
+| POST | `/` | session + household | `201 { idea }`; title, description, category, priority (LOW/MEDIUM/HIGH/URGENT), status (IDEA/PLANNED/IN_PROGRESS/COMPLETED/CANCELLED), estimatedCost, currency (ISO 4217, default SGD), notes; rate limited (`ideas-write`) |
+| GET | `/:id` | session + household | Detail |
+| PATCH | `/:id` | session + household | Partial update |
+| DELETE | `/:id` | session + household | Hard delete |
+| POST | `/:id/task` | session + household | Generate a Task from idea; `201 { task }`; idea status → `PLANNED` |
+
+### Ideas vs Tasks
+
+Ideas capture lightweight wishes with optional cost estimate. One-way link to generate a Task (`POST /api/ideas/:id/task`). Ideas never become tasks automatically. Tasks have due dates, assignees, recurrence; ideas have priority, status, estimated cost.
+
+## Dashboard and calendar updates (Phase 8)
+
+### `/api/dashboard`
+
+`GET /` now additionally returns:
+
+```json
+{
+  "family": { "status": "available", "memberCount": 3, "upcomingBirthdays": [...] },
+  "home": { "status": "available", "overdueMaintenanceCount": 2, "upcomingMaintenance": [...], "dueCleaningCount": 1, "laundry": {...}, "expiringDocumentCount": 1 }
+}
+```
+
+Modules report `status: 'empty'` when the household has no records for that domain.
+
+### `/api/calendar`
+
+Range responses now include:
+- `sourceType: FAMILY` — family events (birthdays, anniversaries) and member birthdays
+- `sourceType: MAINTENANCE` — maintenance items on their scheduled date
 
 ## Versioning
 

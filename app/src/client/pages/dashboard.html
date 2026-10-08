@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Housewife Diary dashboard preview.">
+  <meta name="description" content="Housewife Diary dashboard.">
   <title>Dashboard — Housewife Diary</title>
   <script src="/js/theme/boot.js"></script>
   <link rel="stylesheet" href="/css/tokens.css">
@@ -22,11 +22,13 @@
       <div class="main-inner">
         <div class="page-head">
           <div class="page-head__text">
-            <p class="eyebrow">Preview</p>
-            <h1>Dashboard</h1>
-            <p>A look at your home at a glance — sample data for now.</p>
+            <p class="eyebrow">Overview</p>
+            <h1 data-greeting>Dashboard</h1>
+            <p data-subtitle>Loading your home at a glance…</p>
           </div>
         </div>
+
+        <div data-dashboard-notice></div>
 
         <section class="stat-grid" data-stats aria-label="Overview"></section>
 
@@ -34,67 +36,44 @@
           <section class="card">
             <div class="card__head">
               <div class="card__head-text">
-                <h2 data-chart-title>Activity</h2>
-                <p>This week</p>
+                <h2>Today</h2>
+                <p>Meals, shopping and stock</p>
               </div>
+              <a class="btn btn--ghost btn--small" href="/pages/meals.html">Meal plan</a>
             </div>
-            <div class="chart" data-chart role="img" aria-label="Weekly activity chart"></div>
-            <div class="legend" data-chart-legend></div>
+            <div data-today-panel aria-live="polite"></div>
           </section>
 
           <section class="card">
             <div class="card__head">
               <div class="card__head-text">
-                <h2>Today’s tasks</h2>
-                <p>What needs doing</p>
+                <h2>Diary</h2>
+                <p data-diary-subtitle>Your latest entries</p>
               </div>
+              <a class="btn btn--ghost btn--small" href="/pages/diary.html">Open diary</a>
             </div>
-            <div class="item-list" data-tasks></div>
+            <div data-diary-panel aria-live="polite"></div>
           </section>
 
           <section class="card">
             <div class="card__head">
               <div class="card__head-text">
-                <h2>Shopping</h2>
-                <p data-shopping-label>Weekly list</p>
+                <h2>Household</h2>
+                <p>Who you are sharing this home with</p>
               </div>
+              <a class="btn btn--ghost btn--small" href="/pages/household.html">Manage</a>
             </div>
-            <div class="stack">
-              <div class="progress" role="progressbar" data-shopping-progress>
-                <div class="progress__fill" data-shopping-fill></div>
-              </div>
-              <p class="form-status" data-shopping-status></p>
-            </div>
+            <dl data-household-facts></dl>
           </section>
 
           <section class="card">
             <div class="card__head">
               <div class="card__head-text">
-                <h2>Recent diary entries</h2>
-                <p>Lately at home</p>
+                <h2>Modules</h2>
+                <p>Jump in, or preview what is coming</p>
               </div>
             </div>
-            <div class="timeline" data-diary></div>
-          </section>
-
-          <section class="card">
-            <div class="card__head">
-              <div class="card__head-text">
-                <h2 data-suggestions-title>Kitchen inspiration</h2>
-                <p>Ideas for you</p>
-              </div>
-            </div>
-            <div data-suggestions></div>
-          </section>
-
-          <section class="card">
-            <div class="card__head">
-              <div class="card__head-text">
-                <h2>Household at a glance</h2>
-                <p>Quick facts</p>
-              </div>
-            </div>
-            <dl data-facts></dl>
+            <div class="module-grid" data-modules></div>
           </section>
         </div>
       </div>
@@ -102,6 +81,6 @@
 
     <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
   </div>
-  <script type="module" src="/js/pages/dashboard-preview.js"></script>
+  <script type="module" src="/js/pages/dashboard.js"></script>
 </body>
 </html>

@@ -3,6 +3,19 @@
 // households, household_members, password_reset_tokens and
 // email_verification_tokens.
 // Phase 3 (theme engine) adds themes and user_preferences.
+// Phase 4 (dashboard + diary) adds moods, diary_entries, diary_tags,
+// diary_entry_tags and diary_attachments — see docs/diary.md.
+// Phase 5 (tasks + calendar) adds task_categories, tasks (with a bounded
+// recurrence materialization) and calendar_events — see docs/tasks.md
+// and docs/calendar.md.
+// Phase 6 (meals, recipes, shopping, inventory) adds recipes,
+// recipe_ingredients, meal_plan_entries, shopping_lists, shopping_list_items,
+// inventory_items and inventory_transactions — see docs/recipes.md,
+// docs/meals.md, docs/shopping.md and docs/inventory.md.
+// Phase 7 (finance) adds finance_accounts, finance_categories,
+// financial_transactions, finance_receipts, finance_budgets, finance_bills and
+// finance_recurring_transactions — see docs/finance.md. Money is stored as
+// Decimal(14,2) and serialized as 2-decimal strings (never JS floats).
 
 generator client {
   provider = "prisma-client-js"
@@ -57,6 +70,268 @@ enum NavStyle {
   @@map("nav_style")
 }
 
+// Phase 4 — dashboard and personal diary (see docs/diary.md).
+
+// Which part of the day an entry belongs to; drives the timeline sections.
+enum TimeOfDay {
+  MORNING
+  AFTERNOON
+  EVENING
+
+  @@map("time_of_day")
+}
+
+// Phase 5 — tasks and calendar (see docs/tasks.md, docs/calendar.md).
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@map("task_status")
+}
+
+// Declaration order is the sort order in PostgreSQL: LOW < MEDIUM < HIGH <
+// URGENT, so ordering by the column descending yields most urgent first.
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+
+  @@map("task_priority")
+}
+
+enum CalendarSourceType {
+  MANUAL
+  TASK
+  DIARY
+  BILL
+  FAMILY
+  MAINTENANCE
+  MEAL
+  SHOPPING
+  APPOINTMENT
+
+  @@map("calendar_source_type")
+}
+
+enum CalendarCategory {
+  GENERAL
+  FAMILY
+  HOME
+  HEALTH
+  WORK
+  OTHER
+
+  @@map("calendar_category")
+}
+
+// Phase 6 — meals, recipes, shopping and inventory (see docs/recipes.md,
+// docs/meals.md, docs/shopping.md, docs/inventory.md).
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+
+  @@map("meal_type")
+}
+
+// Shared by shopping items and inventory items so category logic exists in
+// exactly one place; extending the set is a one-line enum migration.
+enum ItemCategory {
+  PRODUCE
+  MEAT
+  SEAFOOD
+  DAIRY
+  PANTRY
+  FROZEN
+  DRINKS
+  HOUSEHOLD
+  OTHER
+
+  @@map("item_category")
+}
+
+enum InventoryLocation {
+  PANTRY
+  REFRIGERATOR
+  FREEZER
+  HOUSEHOLD
+  OTHER
+
+  @@map("inventory_location")
+}
+
+enum InventoryTransactionType {
+  PURCHASE
+  CONSUME
+  ADJUST
+  WASTE
+
+  @@map("inventory_transaction_type")
+}
+
+// Phase 7 — household finance (see docs/finance.md).
+//
+// One ledger table (`financial_transactions`) holds income, expenses and
+// transfers. Amounts are positive magnitudes; direction comes from `type`.
+// Transfers never count as income or expense. History is immutable: rows are
+// voided, never deleted, and money fields can never be patched.
+
+enum FinanceAccountType {
+  CASH
+  BANK
+  CREDIT_CARD
+  E_WALLET
+  OTHER
+
+  @@map("finance_account_type")
+}
+
+enum FinanceCategoryType {
+  INCOME
+  EXPENSE
+
+  @@map("finance_category_type")
+}
+
+enum FinanceTransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+
+  @@map("finance_transaction_type")
+}
+
+enum FinanceTransactionStatus {
+  POSTED
+  VOIDED
+
+  @@map("finance_transaction_status")
+}
+
+// Traceability: which module produced a transaction. `sourceId` carries the
+// bill id; recurrence-generated rows also link through recurringTransactionId.
+enum FinanceSourceType {
+  MANUAL
+  BILL
+  RECURRING
+
+  @@map("finance_source_type")
+}
+
+// Only MONTHLY exists today; the enum is the extension point for weekly /
+// yearly / custom budget periods.
+enum FinanceBudgetPeriod {
+  MONTHLY
+
+  @@map("finance_budget_period")
+}
+
+// Stored states only. DUE and OVERDUE are derived from dueDate at read time
+// (never stored), exactly like inventory expiry status.
+enum FinanceBillStatus {
+  UPCOMING
+  PAID
+  CANCELLED
+
+  @@map("finance_bill_status")
+}
+
+enum FinanceRecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+
+  @@map("finance_recurrence_frequency")
+}
+
+// Phase 8 — provenance of generated tasks (cleaning definitions, maintenance
+// and ideas create at most one task each; (sourceType, sourceId) is unique and
+// MANUAL rows keep sourceId NULL so they are unconstrained.
+enum TaskSourceType {
+  MANUAL
+  CLEANING
+  MAINTENANCE
+  IDEA
+
+  @@map("task_source_type")
+}
+
+enum CleaningFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+
+  @@map("cleaning_frequency")
+}
+
+enum CleaningStatus {
+  ACTIVE
+  PAUSED
+
+  @@map("cleaning_status")
+}
+
+enum LaundryStatus {
+  PENDING
+  WASHING
+  DRYING
+  FOLDED
+  COMPLETED
+
+  @@map("laundry_status")
+}
+
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@map("maintenance_status")
+}
+
+enum DocumentCategory {
+  INSURANCE
+  WARRANTY
+  RECEIPT
+  CONTRACT
+  PROPERTY
+  SCHOOL
+  MEDICAL
+  FINANCIAL
+  OTHER
+
+  @@map("document_category")
+}
+
+// Polymorphic reference: validated per type against the household's own rows;
+// no FK (the target lives in an unrelated table).
+enum DocumentReferenceType {
+  MAINTENANCE
+  FINANCE_TRANSACTION
+  INVENTORY
+  FAMILY_MEMBER
+
+  @@map("document_reference_type")
+}
+
+enum IdeaStatus {
+  IDEA
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@map("idea_status")
+}
+
 model User {
   id                String    @id @default(cuid())
   // citext-style uniqueness: emails are normalized to lowercase in the
@@ -71,13 +346,39 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  activeHousehold         Household?               @relation("UserActiveHousehold", fields: [activeHouseholdId], references: [id], onDelete: SetNull)
-  ownedHouseholds         Household[]              @relation("HouseholdOwner")
+  activeHousehold         Household?                    @relation("UserActiveHousehold", fields: [activeHouseholdId], references: [id], onDelete: SetNull)
+  ownedHouseholds         Household[]                   @relation("HouseholdOwner")
   sessions                Session[]
   memberships             HouseholdMember[]
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   preferences             UserPreference?
+  diaryEntries            DiaryEntry[]
+  diaryTags               DiaryTag[]
+  tasksCreated            Task[]                        @relation("TaskCreator")
+  tasksAssigned           Task[]                        @relation("TaskAssignee")
+  calendarEvents          CalendarEvent[]               @relation("EventCreator")
+  recipesCreated          Recipe[]                      @relation("RecipeCreator")
+  mealPlanEntries         MealPlanEntry[]               @relation("MealEntryCreator")
+  shoppingLists           ShoppingList[]                @relation("ShoppingListCreator")
+  inventoryItems          InventoryItem[]               @relation("InventoryItemCreator")
+  inventoryTransactions   InventoryTransaction[]        @relation("InventoryTransactionCreator")
+  financeAccountsCreated  FinanceAccount[]              @relation("FinanceAccountCreator")
+  financeTransactions     FinancialTransaction[]        @relation("FinanceTransactionCreator")
+  financeVoided           FinancialTransaction[]        @relation("FinanceTransactionVoider")
+  financeBudgetsCreated   FinanceBudget[]               @relation("FinanceBudgetCreator")
+  financeBillsCreated     FinanceBill[]                 @relation("FinanceBillCreator")
+  financeRecurringCreated FinanceRecurringTransaction[] @relation("FinanceRecurringCreator")
+  familyMembersCreated    FamilyMember[]                @relation("FamilyMemberCreator")
+  familyLinkedMembers     FamilyMember[]                @relation("FamilyMemberLinkedUser")
+  familyEventsCreated     FamilyEvent[]                 @relation("FamilyEventCreator")
+  roomsCreated            Room[]                        @relation("RoomCreator")
+  cleaningCreated         CleaningDefinition[]          @relation("CleaningCreator")
+  laundryCreated          LaundryItem[]                 @relation("LaundryCreator")
+  maintenanceCreated      Maintenance[]                 @relation("MaintenanceCreator")
+  documentsUploaded       Document[]                    @relation("DocumentUploader")
+  notesCreated            Note[]                        @relation("NoteCreator")
+  ideasCreated            Idea[]                        @relation("IdeaCreator")
 
   @@map("users")
 }
@@ -108,9 +409,35 @@ model Household {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  owner         User              @relation("HouseholdOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
-  members       HouseholdMember[]
-  activeMembers User[]            @relation("UserActiveHousehold")
+  owner                 User                          @relation("HouseholdOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  members               HouseholdMember[]
+  activeMembers         User[]                        @relation("UserActiveHousehold")
+  diaryEntries          DiaryEntry[]
+  diaryTags             DiaryTag[]
+  taskCategories        TaskCategory[]
+  tasks                 Task[]
+  calendarEvents        CalendarEvent[]
+  recipes               Recipe[]
+  mealPlanEntries       MealPlanEntry[]
+  shoppingLists         ShoppingList[]
+  inventoryItems        InventoryItem[]
+  inventoryTransactions InventoryTransaction[]
+  financeAccounts       FinanceAccount[]
+  financeCategories     FinanceCategory[]
+  financeTransactions   FinancialTransaction[]
+  financeBudgets        FinanceBudget[]
+  financeBills          FinanceBill[]
+  financeRecurring      FinanceRecurringTransaction[]
+  familyMembers         FamilyMember[]
+  familyEvents          FamilyEvent[]
+  rooms                 Room[]
+  cleaningDefinitions   CleaningDefinition[]
+  laundryItems          LaundryItem[]
+  maintenance           Maintenance[]
+  documents             Document[]
+  notes                 Note[]
+  noteTags              NoteTag[]
+  ideas                 Idea[]
 
   @@index([ownerUserId])
   @@map("households")
@@ -187,11 +514,11 @@ model Theme {
 
 // One row per user (lazily created on first theme read/write).
 model UserPreference {
-  id       String  @id @default(cuid())
-  userId   String  @unique @map("user_id")
-  themeId  String? @map("theme_id")
+  id             String  @id @default(cuid())
+  userId         String  @unique @map("user_id")
+  themeId        String? @map("theme_id")
   // Variable → value map limited server-side to the override allowlist.
-  themeOverrides Json? @map("theme_overrides")
+  themeOverrides Json?   @map("theme_overrides")
 
   colorMode ColorMode @default(SYSTEM) @map("color_mode")
   density   Density   @default(COMFORTABLE)
@@ -204,4 +531,927 @@ model UserPreference {
   theme Theme? @relation(fields: [themeId], references: [id], onDelete: SetNull)
 
   @@map("user_preferences")
+}
+
+// Reusable mood catalog, seeded by migration (like themes). Entries point at
+// a mood with SET NULL so deleting a mood never deletes diary history.
+model Mood {
+  id        String @id
+  name      String
+  sortOrder Int    @default(0) @map("sort_order")
+
+  entries DiaryEntry[]
+
+  @@map("moods")
+}
+
+// Personal diary entries, private to their author and scoped to the
+// household they were written in (see docs/diary.md).
+model DiaryEntry {
+  id          String    @id @default(cuid())
+  householdId String    @map("household_id")
+  userId      String    @map("user_id")
+  title       String
+  // Plain text only — rendered with textContent, never innerHTML.
+  content     String
+  entryDate   DateTime  @map("entry_date") @db.Date
+  timeOfDay   TimeOfDay @default(EVENING) @map("time_of_day")
+  moodId      String?   @map("mood_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household   Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mood        Mood?             @relation(fields: [moodId], references: [id], onDelete: SetNull)
+  tags        DiaryEntryTag[]
+  attachments DiaryAttachment[]
+
+  @@index([householdId, userId, entryDate(sort: Desc)])
+  @@map("diary_entries")
+}
+
+// Per-user tag vocabulary (private — never leaks across users).
+model DiaryTag {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  userId      String @map("user_id")
+  name        String
+  // Lowercased name for case-insensitive uniqueness + filtering.
+  normalized  String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  household Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries   DiaryEntryTag[]
+
+  @@unique([householdId, userId, normalized])
+  @@index([userId])
+  @@map("diary_tags")
+}
+
+model DiaryEntryTag {
+  entryId String @map("entry_id")
+  tagId   String @map("tag_id")
+
+  entry DiaryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  tag   DiaryTag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, tagId])
+  @@map("diary_entry_tags")
+}
+
+// Attachment metadata is stored here; the physical file lives under
+// uploads/diary/ under a server-generated name (never the client's).
+model DiaryAttachment {
+  id           String @id @default(cuid())
+  entryId      String @map("entry_id")
+  // Client filename, sanitized for display/download only — never a path.
+  originalName String @map("original_name")
+  // Server-generated: <random>.<ext> — the only name ever used on disk.
+  storedName   String @unique @map("stored_name")
+  mimeType     String @map("mime_type")
+  sizeBytes    Int    @map("size_bytes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  entry DiaryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([entryId])
+  @@map("diary_attachments")
+}
+
+// Phase 5 models — task categories, tasks (bounded recurrence materialization)
+// and native calendar events. See docs/tasks.md and docs/calendar.md.
+
+model TaskCategory {
+  id          String   @id @default(cuid())
+  householdId String   @map("household_id")
+  name        String
+  // Lowercased, whitespace-collapsed form used for the uniqueness check.
+  normalized  String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@unique([householdId, normalized])
+  @@index([householdId])
+  @@map("task_categories")
+}
+
+model Task {
+  id           String  @id @default(cuid())
+  householdId  String  @map("household_id")
+  createdById  String  @map("created_by_id")
+  // Optional assignee; must be a member of the same household.
+  assignedToId String? @map("assigned_to_id")
+  // Optional family-member assignee (a person who may not have an account);
+  // at most one of the two assignees is set (validated in the service).
+  assignedFamilyMemberId String? @map("assigned_family_member_id")
+  categoryId              String? @map("category_id")
+
+  // Which module generated this task. Head rows created by a cleaning
+  // definition, maintenance item or idea carry { sourceType, sourceId };
+  // occurrences and manual tasks keep MANUAL/NULL (unique per source).
+  sourceType TaskSourceType @default(MANUAL) @map("source_type")
+  sourceId   String?         @map("source_id")
+
+  title       String
+  description String?
+
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueAt       DateTime?    @map("due_at")
+  completedAt DateTime?    @map("completed_at")
+
+  // Structured recurrence rule of a series head:
+  // { frequency, interval, daysOfWeek?, endDate? }. Non-null only on the
+  // series head; occurrences carry a seriesId instead. Occurrences are
+  // materialized rows within a bounded rolling window (see docs/tasks.md).
+  recurrence Json?
+  // Self-relation: head (seriesId null, recurrence set) -> occurrence rows.
+  seriesId   String? @map("series_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household             Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy             User                  @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  assignedTo            User?                 @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedFamilyMember  FamilyMember?         @relation(fields: [assignedFamilyMemberId], references: [id], onDelete: SetNull)
+  category              TaskCategory?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  series      Task?  @relation("TaskSeries", fields: [seriesId], references: [id], onDelete: Cascade)
+  occurrences Task[] @relation("TaskSeries")
+
+  @@unique([sourceType, sourceId])
+  @@index([householdId, status])
+  @@index([householdId, dueAt])
+  @@index([householdId, assignedToId])
+  @@index([householdId, assignedFamilyMemberId])
+  @@index([householdId, createdAt])
+  @@index([seriesId])
+  @@map("tasks")
+}
+
+model CalendarEvent {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+
+  title       String
+  description String?
+
+  // Inclusive bounds. For all-day events both are stored as UTC midnights of
+  // the (local) start/end calendar days; for timed events they are exact
+  // instants. endAt is always >= startAt.
+  startAt DateTime @map("start_at")
+  endAt   DateTime @map("end_at")
+  allDay  Boolean  @default(false) @map("all_day")
+
+  category              CalendarCategory @default(GENERAL)
+  location              String?
+  // Same shape as Task.recurrence; expands in-memory for ranged queries.
+  recurrence            Json?
+  // Minutes before startAt when a reminder would fire. Delivery is deferred
+  // (documented in docs/calendar.md); this is stored foundation only.
+  reminderOffsetMinutes Int?             @map("reminder_offset_minutes")
+  reminderEnabled       Boolean          @default(true) @map("reminder_enabled")
+
+  // Source abstraction: native events are MANUAL; derived items (TASK, DIARY,
+  // ...) are never persisted as CalendarEvent rows.
+  sourceType CalendarSourceType @default(MANUAL) @map("source_type")
+  sourceId   String?            @map("source_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("EventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([householdId, startAt])
+  @@index([householdId, endAt])
+  @@index([householdId, sourceType])
+  @@index([householdId, sourceId])
+  @@map("calendar_events")
+}
+
+// Phase 6 — recipes, ingredients, meal plan, shopping and inventory.
+//
+// Integration flow (no duplicated data): a recipe's structured ingredients
+// scale into shopping items (matching by normalized name + unit), shopping
+// items can be moved into inventory as a PURCHASE transaction, and inventory
+// quantities only change through explicit transactions. See docs.
+
+model Recipe {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+
+  title        String
+  description  String?
+  instructions String?
+  // Number of servings the ingredient quantities are written for; used as
+  // the scaling base when adding a recipe to a shopping list.
+  servings     Int?
+  prepMinutes  Int?    @map("prep_minutes")
+  cookMinutes  Int?    @map("cook_minutes")
+  category     String?
+  cuisine      String?
+  isFavourite  Boolean @default(false) @map("is_favourite")
+  notes        String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household     Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy     User               @relation("RecipeCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  ingredients   RecipeIngredient[]
+  mealEntries   MealPlanEntry[]
+  shoppingItems ShoppingListItem[]
+
+  @@index([householdId, updatedAt(sort: Desc)])
+  @@index([householdId, isFavourite])
+  @@map("recipes")
+}
+
+// Structured ingredient lines (never an uncontrolled text blob). `normalized`
+// is the lowercased, whitespace-collapsed name used for matching when
+// generating shopping items and inventory purchases.
+model RecipeIngredient {
+  id         String   @id @default(cuid())
+  recipeId   String   @map("recipe_id")
+  name       String
+  normalized String
+  quantity   Decimal? @db.Decimal(12, 3)
+  unit       String?
+  optional   Boolean  @default(false)
+  notes      String?
+  sortOrder  Int      @default(0) @map("sort_order")
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId, sortOrder])
+  @@index([normalized])
+  @@map("recipe_ingredients")
+}
+
+// One planned meal on a calendar date. The recipe is referenced, never
+// copied; `title` holds a free-text label for meals without a recipe and is
+// also used to snapshot the recipe name if the recipe is deleted.
+model MealPlanEntry {
+  id          String   @id @default(cuid())
+  householdId String   @map("household_id")
+  createdById String   @map("created_by_id")
+  recipeId    String?  @map("recipe_id")
+  date        DateTime @db.Date
+  mealType    MealType @map("meal_type")
+  title       String?
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("MealEntryCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  recipe    Recipe?   @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, date])
+  @@index([householdId, mealType])
+  @@index([recipeId])
+  @@map("meal_plan_entries")
+}
+
+model ShoppingList {
+  id          String    @id @default(cuid())
+  householdId String    @map("household_id")
+  createdById String    @map("created_by_id")
+  name        String
+  notes       String?
+  archivedAt  DateTime? @map("archived_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User               @relation("ShoppingListCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  items     ShoppingListItem[]
+
+  @@index([householdId, archivedAt])
+  @@map("shopping_lists")
+}
+
+model ShoppingListItem {
+  id          String       @id @default(cuid())
+  listId      String       @map("list_id")
+  // Traceability only: which recipe generated/merged this line (SET NULL so
+  // deleting a recipe never removes shopping history).
+  recipeId    String?      @map("recipe_id")
+  name        String
+  normalized  String
+  quantity    Decimal?     @db.Decimal(12, 3)
+  unit        String?
+  category    ItemCategory @default(OTHER)
+  notes       String?
+  purchasedAt DateTime?    @map("purchased_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  list   ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  recipe Recipe?      @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+
+  @@index([listId, purchasedAt])
+  @@index([listId, category])
+  @@index([normalized])
+  @@map("shopping_list_items")
+}
+
+model InventoryItem {
+  id              String            @id @default(cuid())
+  householdId     String            @map("household_id")
+  createdById     String            @map("created_by_id")
+  name            String
+  normalized      String
+  // Quantities change only through InventoryTransaction rows (never a raw
+  // PATCH) so history stays complete. minimumQuantity 0 = no threshold.
+  quantity        Decimal           @default(0) @db.Decimal(12, 3)
+  unit            String?
+  category        ItemCategory      @default(OTHER)
+  location        InventoryLocation @default(PANTRY)
+  expiresAt       DateTime?         @map("expires_at") @db.Date
+  minimumQuantity Decimal           @default(0) @map("minimum_quantity") @db.Decimal(12, 3)
+  notes           String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household    Household              @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy    User                   @relation("InventoryItemCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  transactions InventoryTransaction[]
+
+  @@index([householdId, normalized])
+  @@index([householdId, expiresAt])
+  @@index([householdId, category])
+  @@index([householdId, location])
+  @@map("inventory_items")
+}
+
+// Ledger: every quantity change is recorded with the resulting balance.
+model InventoryTransaction {
+  id            String                   @id @default(cuid())
+  householdId   String                   @map("household_id")
+  itemId        String                   @map("item_id")
+  createdById   String                   @map("created_by_id")
+  type          InventoryTransactionType
+  quantityDelta Decimal                  @map("quantity_delta") @db.Decimal(12, 3)
+  quantityAfter Decimal                  @map("quantity_after") @db.Decimal(12, 3)
+  note          String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  household Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  item      InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  createdBy User          @relation("InventoryTransactionCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([itemId, createdAt(sort: Desc)])
+  @@index([householdId, createdAt(sort: Desc)])
+  @@map("inventory_transactions")
+}
+
+// Phase 7 — household finance (see docs/finance.md).
+
+// A wallet/account the household tracks manually. Balances are DERIVED from
+// openingBalance + posted transactions (see docs/finance.md); no cached
+// balance column exists to drift.
+model FinanceAccount {
+  id             String             @id @default(cuid())
+  householdId    String             @map("household_id")
+  createdById    String             @map("created_by_id")
+  name           String
+  // Lowercased name for case-insensitive uniqueness within the household.
+  normalized     String
+  type           FinanceAccountType @default(CASH)
+  // ISO 4217 code (see validators/finance.js). Transactions on the account
+  // must use the same currency; there is no FX conversion in this phase.
+  currency       String             @db.VarChar(3)
+  openingBalance Decimal            @default(0) @map("opening_balance") @db.Decimal(14, 2)
+  // Archived accounts keep history but disappear from pickers.
+  active         Boolean            @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household           Household                     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy           User                          @relation("FinanceAccountCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  transactions        FinancialTransaction[]        @relation("TransactionAccount")
+  counterTransactions FinancialTransaction[]        @relation("TransactionCounterAccount")
+  bills               FinanceBill[]
+  recurring           FinanceRecurringTransaction[]
+
+  @@unique([householdId, normalized])
+  @@index([householdId, active])
+  @@map("finance_accounts")
+}
+
+// Income/expense categories. `householdId` is NULL for the global catalog
+// seeded by migration (read-only through the API); household rows are fully
+// manageable. Archived categories stay attached to history.
+model FinanceCategory {
+  id          String              @id @default(cuid())
+  householdId String?             @map("household_id")
+  name        String
+  normalized  String
+  type        FinanceCategoryType
+  // Optional icon name from the client sprite (rendered with a fallback).
+  icon        String?
+  active      Boolean             @default(true)
+  sortOrder   Int                 @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household    Household?                    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  transactions FinancialTransaction[]
+  budgets      FinanceBudget[]
+  bills        FinanceBill[]
+  recurring    FinanceRecurringTransaction[]
+
+  @@unique([householdId, type, normalized])
+  @@index([householdId, type, active])
+  @@map("finance_categories")
+}
+
+// The single money ledger. Rows are never deleted; voiding keeps the history
+// readable while excluding the transaction from balances and reports.
+model FinancialTransaction {
+  id               String                   @id @default(cuid())
+  householdId      String                   @map("household_id")
+  createdById      String                   @map("created_by_id")
+  type             FinanceTransactionType
+  status           FinanceTransactionStatus @default(POSTED)
+  // Always a positive magnitude, max 12 integer digits + 2 decimals.
+  amount           Decimal                  @db.Decimal(14, 2)
+  currency         String                   @db.VarChar(3)
+  // Required for INCOME/EXPENSE, forbidden for TRANSFER (validated).
+  categoryId       String?                  @map("category_id")
+  // Required for TRANSFER (source account); optional for INCOME/EXPENSE.
+  accountId        String?                  @map("account_id")
+  counterAccountId String?                  @map("counter_account_id")
+  transactionDate  DateTime                 @map("transaction_date") @db.Date
+  description      String?
+  merchant         String?
+  notes            String?
+
+  // Which module produced the row. BILL rows carry the bill id in sourceId;
+  // RECURRING rows link through recurringTransactionId (unique per date).
+  sourceType             FinanceSourceType @default(MANUAL) @map("source_type")
+  sourceId               String?           @map("source_id")
+  recurringTransactionId String?           @map("recurring_transaction_id")
+
+  // Void audit trail (one-way; a voided row can never return to POSTED).
+  voidedAt   DateTime? @map("voided_at")
+  voidedById String?   @map("voided_by_id")
+  voidReason String?   @map("void_reason")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household      Household                    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy      User                         @relation("FinanceTransactionCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  voidedBy       User?                        @relation("FinanceTransactionVoider", fields: [voidedById], references: [id], onDelete: SetNull)
+  category       FinanceCategory?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  account        FinanceAccount?              @relation("TransactionAccount", fields: [accountId], references: [id], onDelete: SetNull)
+  counterAccount FinanceAccount?              @relation("TransactionCounterAccount", fields: [counterAccountId], references: [id], onDelete: SetNull)
+  recurring      FinanceRecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
+  receipt        FinanceReceipt?
+  paidBill       FinanceBill?
+  // Optional cost reference from a home-maintenance record (no FK back from
+  // money — maintenance points here and is SetNull on delete).
+  maintenance    Maintenance?
+
+  // One generated transaction per occurrence date; NULLs (manual rows) are
+  // unconstrained in PostgreSQL.
+  @@unique([recurringTransactionId, transactionDate])
+  @@index([householdId, transactionDate(sort: Desc)])
+  @@index([householdId, type, transactionDate])
+  @@index([householdId, categoryId, transactionDate])
+  @@index([householdId, accountId])
+  @@index([householdId, status])
+  @@index([householdId, sourceType, sourceId])
+  @@map("financial_transactions")
+}
+
+// At most one receipt per transaction; the physical file lives under
+// uploads/finance/ under a server-generated name (never the client's).
+model FinanceReceipt {
+  id            String @id @default(cuid())
+  transactionId String @unique @map("transaction_id")
+  // Client filename, sanitized for display/download only — never a path.
+  originalName  String @map("original_name")
+  // Server-generated: <random>.<ext> — the only name ever used on disk.
+  storedName    String @unique @map("stored_name")
+  mimeType      String @map("mime_type")
+  sizeBytes     Int    @map("size_bytes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  transaction FinancialTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("finance_receipts")
+}
+
+// Monthly budget for one category. Actual spending is computed from posted
+// EXPENSE transactions of the same category + currency + month; the
+// percentage is derived, never stored.
+model FinanceBudget {
+  id          String              @id @default(cuid())
+  householdId String              @map("household_id")
+  createdById String              @map("created_by_id")
+  categoryId  String              @map("category_id")
+  period      FinanceBudgetPeriod @default(MONTHLY)
+  amount      Decimal             @db.Decimal(14, 2)
+  currency    String              @db.VarChar(3)
+  year        Int
+  month       Int
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User            @relation("FinanceBudgetCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  category  FinanceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@unique([householdId, categoryId, period, year, month])
+  @@index([householdId, year, month])
+  @@map("finance_budgets")
+}
+
+// A payable reminder. Cash-basis model: a bill is NOT an expense; paying it
+// creates an EXPENSE transaction (see docs/finance.md). `status` stores only
+// UPCOMING/PAID/CANCELLED — DUE and OVERDUE are derived from dueDate.
+model FinanceBill {
+  id          String            @id @default(cuid())
+  householdId String            @map("household_id")
+  createdById String            @map("created_by_id")
+  name        String
+  amount      Decimal           @db.Decimal(14, 2)
+  currency    String            @db.VarChar(3)
+  dueDate     DateTime          @map("due_date") @db.Date
+  categoryId  String            @map("category_id")
+  accountId   String?           @map("account_id")
+  status      FinanceBillStatus @default(UPCOMING)
+  // Informational flag for now; automatic regeneration is deferred (docs).
+  recurring   Boolean           @default(false)
+  notes       String?
+
+  paidAt            DateTime? @map("paid_at")
+  // Unique FK to the expense that settled the bill (traceability + the
+  // duplicate-payment guard is enforced transactionally in the service).
+  paidTransactionId String?   @unique @map("paid_transaction_id")
+  cancelledAt       DateTime? @map("cancelled_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household       Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy       User                  @relation("FinanceBillCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  category        FinanceCategory       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  account         FinanceAccount?       @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  paidTransaction FinancialTransaction? @relation(fields: [paidTransactionId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, dueDate])
+  @@index([householdId, status])
+  @@index([householdId, categoryId])
+  @@map("finance_bills")
+}
+
+// Recurring income/expense rule. Occurrences are materialized as ledger rows
+// only up to "today" (cash-basis, bounded per call): `nextOccurrence` is the
+// cursor and the service advances it. Paused rules keep their cursor.
+model FinanceRecurringTransaction {
+  id          String                 @id @default(cuid())
+  householdId String                 @map("household_id")
+  createdById String                 @map("created_by_id")
+  // Validator restricts this to INCOME or EXPENSE (no recurring transfers).
+  type        FinanceTransactionType
+  amount      Decimal                @db.Decimal(14, 2)
+  currency    String                 @db.VarChar(3)
+  categoryId  String                 @map("category_id")
+  accountId   String?                @map("account_id")
+  description String?
+  merchant    String?
+  notes       String?
+
+  frequency      FinanceRecurrenceFrequency
+  interval       Int                        @default(1)
+  startDate      DateTime                   @map("start_date") @db.Date
+  endDate        DateTime?                  @map("end_date") @db.Date
+  nextOccurrence DateTime?                  @map("next_occurrence") @db.Date
+  active         Boolean                    @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household    Household              @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy    User                   @relation("FinanceRecurringCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  category     FinanceCategory        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  account      FinanceAccount?        @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  transactions FinancialTransaction[]
+
+  @@index([householdId, active])
+  @@index([householdId, nextOccurrence])
+  @@map("finance_recurring_transactions")
+}
+
+// ============================================================================
+// Phase 8 — family, home management, documents, notes, ideas
+// ============================================================================
+
+// A person in the household — may or may not have an app account (that is
+// HouseholdMember). Name/relationship are free text (extensible vocabulary,
+// normalized for duplicate detection); no gender or other sensitive data is
+// collected. Archiving keeps history (tasks/events stay attached).
+model FamilyMember {
+  id          String  @id @default(cuid())
+  householdId String  @map("household_id")
+  createdById String  @map("created_by_id")
+  name        String
+  // Lowercased name for case-insensitive uniqueness within the household.
+  normalized  String
+  // Free text: Wife, Husband, Child, Parent, Sibling, Other… (suggested by
+  // the client, never hardcoded in business logic).
+  relationship String
+  // Optional link to an authenticated household member (SetNull on unlink).
+  linkedUserId String? @map("linked_user_id")
+  dateOfBirth  DateTime? @map("date_of_birth") @db.Date
+  notes        String?
+  active       Boolean  @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household           Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy           User                  @relation("FamilyMemberCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  linkedUser          User?                 @relation("FamilyMemberLinkedUser", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  events              FamilyEvent[]
+  tasks               Task[]
+  cleaningDefinitions CleaningDefinition[]
+
+  @@unique([householdId, normalized])
+  @@index([householdId, active])
+  @@map("family_members")
+}
+
+// An important dated family occasion. Concrete dates (a graduation); opt into
+// `repeatsYearly` for anniversaries/school events — the calendar then expands
+// the day/month yearly inside the queried range. Birthdays are derived from
+// FamilyMember.dateOfBirth instead of duplicated here.
+model FamilyEvent {
+  id          String  @id @default(cuid())
+  householdId String  @map("household_id")
+  createdById String  @map("created_by_id")
+  memberId    String? @map("member_id")
+  title       String
+  // Free text kind: Birthday, Anniversary, Graduation, School event, Important.
+  kind        String
+  eventDate   DateTime @map("event_date") @db.Date
+  repeatsYearly Boolean @default(false) @map("repeats_yearly")
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User          @relation("FamilyEventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  member    FamilyMember? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, eventDate])
+  @@map("family_events")
+}
+
+// A physical room. Names are extensible and never hardcoded into business
+// logic; cleaning and maintenance reference rooms (Restrict / SetNull).
+model Room {
+  id          String  @id @default(cuid())
+  householdId String  @map("household_id")
+  createdById String  @map("created_by_id")
+  name        String
+  normalized  String
+  description String?
+  active      Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household     Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy     User                  @relation("RoomCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  cleaning      CleaningDefinition[]
+  maintenance   Maintenance[]
+
+  @@unique([householdId, normalized])
+  @@index([householdId, active])
+  @@map("rooms")
+}
+
+// The recurring cleaning *definition* (not a task list). Creating an active
+// definition generates a task series through the existing task recurrence
+// engine (Task { sourceType: CLEANING, sourceId }); pausing or deleting the
+// definition removes that generated series (docs/home-management.md).
+model CleaningDefinition {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+  roomId      String @map("room_id")
+  // Shown as the generated task title ("Clean kitchen").
+  title       String
+  frequency   CleaningFrequency
+  interval    Int            @default(1)
+  status      CleaningStatus @default(ACTIVE)
+  lastCompletedAt DateTime? @map("last_completed_at")
+  nextDueAt        DateTime? @map("next_due_at") @db.Date
+  // Optional family-member responsibility; propagated to the task series.
+  assignedFamilyMemberId String? @map("assigned_family_member_id")
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household             Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy             User           @relation("CleaningCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  room                  Room           @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  assignedFamilyMember  FamilyMember?  @relation(fields: [assignedFamilyMemberId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, status])
+  @@index([householdId, nextDueAt])
+  @@map("cleaning_definitions")
+}
+
+// Deliberately lightweight: one row per laundry batch. No inventory tracking.
+model LaundryItem {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+  // Free text type: Clothes, Bedding, Towels, Baby, Other…
+  category    String
+  status      LaundryStatus @default(PENDING)
+  scheduledDate DateTime? @map("scheduled_date") @db.Date
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("LaundryCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([householdId, status])
+  @@index([householdId, scheduledDate])
+  @@map("laundry_items")
+}
+
+// A home maintenance job. Integrates by reference only: optionally one task
+// (unique (MAINTENANCE, id) on tasks), a calendar item derived from
+// scheduledDate, and an optional link to an existing finance transaction —
+// money is never created automatically.
+model Maintenance {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+  roomId      String? @map("room_id")
+  title       String
+  description String?
+  // Free text category: Plumbing, Electrical, Appliance, Painting…
+  category    String
+  priority    TaskPriority      @default(MEDIUM)
+  status      MaintenanceStatus @default(OPEN)
+  scheduledDate DateTime       @map("scheduled_date") @db.Date
+  completedAt   DateTime?       @map("completed_at")
+  // Optional explicit expense reference (user links an existing transaction).
+  transactionId String? @unique @map("transaction_id")
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household   Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy   User               @relation("MaintenanceCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  room        Room?              @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  transaction FinancialTransaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, status])
+  @@index([householdId, scheduledDate])
+  @@map("home_maintenance")
+}
+
+// Private household file. Physical bytes live under uploads/documents/ under
+// a server-generated name (never the client's); served only through the
+// authenticated file endpoint. Expiry status (ACTIVE / EXPIRING_SOON /
+// EXPIRED) is derived at read time — never stored.
+model Document {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  uploadedById String @map("uploaded_by_id")
+  title       String
+  description String?
+  category    DocumentCategory @default(OTHER)
+  originalName String @map("original_name")
+  storedName   String @unique @map("stored_name")
+  mimeType     String @map("mime_type")
+  sizeBytes    Int    @map("size_bytes")
+  expiryDate   DateTime? @map("expiry_date") @db.Date
+  // Optional cross-module link (warranty, insurance, maintenance, invoice…).
+  referenceType DocumentReferenceType? @map("reference_type")
+  referenceId   String? @map("reference_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household  Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  uploadedBy User      @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([householdId, category])
+  @@index([householdId, expiryDate])
+  @@map("documents")
+}
+
+// General household reference notes — NOT diary entries (which are dated,
+// personal journals). Plain text only (rendered with textContent).
+model Note {
+  id          String  @id @default(cuid())
+  householdId String  @map("household_id")
+  createdById String  @map("created_by_id")
+  title       String
+  content     String
+  // Free text category: Household, Recipe ideas, School, Home, Personal…
+  category    String?
+  pinned      Boolean @default(false)
+  archived    Boolean @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User         @relation("NoteCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  tags      NoteTagLink[]
+
+  @@index([householdId, pinned, archived])
+  @@index([householdId, archived, updatedAt])
+  @@map("notes")
+}
+
+// Household tag vocabulary for notes (shared across members so filters work).
+model NoteTag {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  name        String
+  normalized  String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  household Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  notes     NoteTagLink[]
+
+  @@unique([householdId, normalized])
+  @@map("note_tags")
+}
+
+model NoteTagLink {
+  noteId String @map("note_id")
+  tagId  String @map("tag_id")
+
+  note Note    @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag  NoteTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+  @@map("note_tag_links")
+}
+
+// A lightweight idea / wishlist entry — not a project-management tool.
+// estimatedCost is informational only; purchases are recorded explicitly in
+// Finance. Optionally generates at most one task (unique (IDEA, id) on tasks).
+model Idea {
+  id          String @id @default(cuid())
+  householdId String @map("household_id")
+  createdById String @map("created_by_id")
+  title       String
+  description String?
+  // Free text category: Home improvement, Things to buy, Travel…
+  category    String?
+  priority    TaskPriority @default(MEDIUM)
+  status      IdeaStatus   @default(IDEA)
+  estimatedCost Decimal?   @db.Decimal(14, 2)
+  currency    String       @default("SGD") @db.VarChar(3)
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("IdeaCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([householdId, status])
+  @@map("ideas")
 }

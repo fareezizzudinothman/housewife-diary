@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Household bills in Housewife Diary.">
+  <title>Bills — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="Bills">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Money</p>
+            <h1>Bills</h1>
+            <p>Track what is due. Paying a bill records the expense — once.</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn--primary" data-new-bill disabled>New bill</button>
+          </div>
+        </div>
+
+        <p id="bills-status" class="form-status" role="status" aria-live="polite"></p>
+
+        <section class="card card--flat" aria-label="Filters">
+          <form id="bill-filters" class="filter-grid" novalidate>
+            <div class="field">
+              <label for="bill-filter-status">Status</label>
+              <select id="bill-filter-status" name="status">
+                <option value="ALL">All</option>
+                <option value="UPCOMING">Upcoming</option>
+                <option value="DUE">Due today</option>
+                <option value="OVERDUE">Overdue</option>
+                <option value="PAID">Paid</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="bill-filter-category">Category</label>
+              <select id="bill-filter-category" name="categoryId">
+                <option value="">All categories</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="bill-filter-search">Search</label>
+              <input type="search" id="bill-filter-search" name="search" maxlength="100" placeholder="Bill name…">
+            </div>
+            <div class="filter-grid__actions">
+              <button type="submit" class="btn btn--secondary btn--small">Apply</button>
+              <button type="button" class="btn btn--ghost btn--small" data-reset>Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <div data-bills aria-live="polite"></div>
+
+        <nav class="pager" data-pager hidden aria-label="Bill pages">
+          <button type="button" class="btn btn--secondary btn--small" data-page-prev>Previous</button>
+          <span class="pager__label" data-page-label></span>
+          <button type="button" class="btn btn--secondary btn--small" data-page-next>Next</button>
+        </nav>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/bills.js"></script>
+</body>
+</html>

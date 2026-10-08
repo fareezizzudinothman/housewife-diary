@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Create or edit a task in Housewife Diary.">
+  <title>Task — Housewife Diary</title>
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="New task">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner main-inner--narrow">
+        <a class="back-link" href="/pages/tasks.html">← All tasks</a>
+
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Plan</p>
+            <h1 data-form-title>New task</h1>
+            <p data-form-subtitle>What needs doing, and when.</p>
+          </div>
+        </div>
+
+        <div data-form-notice></div>
+
+        <form id="task-form" class="card form" novalidate>
+          <div class="field">
+            <label for="task-title">Title</label>
+            <input type="text" id="task-title" name="title" maxlength="200" required autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="task-description">Notes</label>
+            <textarea id="task-description" name="description" rows="4" maxlength="5000" placeholder="Optional details…"></textarea>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="task-due-date">Due date</label>
+              <input type="date" id="task-due-date" name="dueDate" min="1900-01-01" max="2100-12-31">
+            </div>
+            <div class="field">
+              <label for="task-due-time">Time</label>
+              <input type="time" id="task-due-time" name="dueTime">
+            </div>
+            <div class="field">
+              <label for="task-priority">Priority</label>
+              <select id="task-priority" name="priority">
+                <option value="LOW">Low</option>
+                <option value="MEDIUM" selected>Medium</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
+              </select>
+            </div>
+            <div class="field" data-status-field hidden>
+              <label for="task-status">Status</label>
+              <select id="task-status" name="status">
+                <option value="TODO">To do</option>
+                <option value="IN_PROGRESS">In progress</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="task-category">Category</label>
+              <select id="task-category" name="categoryId">
+                <option value="">No category</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="task-assignee">Assigned to</label>
+              <select id="task-assignee" name="assignedToId">
+                <option value="">Anyone</option>
+              </select>
+            </div>
+          </div>
+
+          <fieldset class="repeat-box" data-repeat>
+            <legend>Repeat</legend>
+            <div class="form-grid">
+              <div class="field">
+                <label for="task-repeat">Frequency</label>
+                <select id="task-repeat" name="recurrenceFrequency">
+                  <option value="NONE">Does not repeat</option>
+                  <option value="DAILY">Daily</option>
+                  <option value="WEEKLY">Weekly</option>
+                  <option value="MONTHLY">Monthly</option>
+                  <option value="YEARLY">Yearly</option>
+                </select>
+              </div>
+              <div class="field" data-repeat-interval hidden>
+                <label for="task-repeat-interval">Every</label>
+                <input type="number" id="task-repeat-interval" name="recurrenceInterval" min="1" max="99" value="1">
+              </div>
+              <div class="field" data-repeat-end hidden>
+                <label for="task-repeat-end">Until</label>
+                <input type="date" id="task-repeat-end" name="recurrenceEnd" min="1900-01-01" max="2100-12-31">
+              </div>
+            </div>
+            <div class="weekday-picker" data-repeat-days hidden>
+              <span class="field-label">Repeat on</span>
+              <div class="weekday-picker__options">
+                <label class="field--check"><input type="checkbox" name="weekday" value="1"> Mon</label>
+                <label class="field--check"><input type="checkbox" name="weekday" value="2"> Tue</label>
+                <label class="field--check"><input type="checkbox" name="weekday" value="3"> Wed</label>
+                <label class="field--check"><input type="checkbox" name="weekday" value="4"> Thu</label>
+                <label class="field--check"><input type="checkbox" name="weekday" value="5"> Fri</label>
+                <label class="field--check"><input type="checkbox" name="weekday" value="6"> Sat</label>
+                <label class="field--check"><input type="checkbox" name="weekday" value="0"> Sun</label>
+              </div>
+            </div>
+            <p class="field-hint" data-repeat-note hidden></p>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary">Save task</button>
+            <a class="btn btn--ghost" href="/pages/tasks.html">Cancel</a>
+            <button type="button" class="btn btn--danger" data-delete hidden>Delete</button>
+          </div>
+          <p id="task-form-status" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/task-form.js"></script>
+</body>
+</html>

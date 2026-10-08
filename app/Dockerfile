@@ -19,8 +19,9 @@ RUN ./node_modules/.bin/prisma generate
 COPY src ./src
 COPY public ./public
 
-# Run as the unprivileged "node" user.
-RUN chown -R node:node /usr/src/app
+# Run as the unprivileged "node" user. The uploads directory is created here
+# because user attachments are persisted through a volume at runtime.
+RUN mkdir -p uploads && chown -R node:node /usr/src/app
 USER node
 
 ENV NODE_ENV=production \

@@ -8,15 +8,82 @@ import { currentSession, loadSession, clearCachedSession } from './state/session
    [data-shell="…"] placeholders, wires the theme toggle, sidebar toggle,
    account menu and current-page marking. Pages call initShell() once. */
 
-const NAV_ITEMS = [
-  { href: '/pages/dashboard-preview.html', label: 'Dashboard', icon: 'grid' },
-  { href: '/', label: 'Home', icon: 'home' },
-  { href: '/pages/household.html', label: 'Household', icon: 'users' },
-  { href: '/pages/appearance.html', label: 'Appearance', icon: 'palette' },
-  { href: '/pages/profile.html', label: 'Profile', icon: 'user' },
+const NAV_SECTIONS = [
+  {
+    title: 'Your Home',
+    items: [
+      { href: '/pages/dashboard.html', label: 'Dashboard', icon: 'grid' },
+      { href: '/', label: 'Home', icon: 'home' },
+      { href: '/pages/diary.html', label: 'Diary', icon: 'book' },
+      { href: '/pages/tasks.html', label: 'Tasks', icon: 'list-checks' },
+      { href: '/pages/calendar.html', label: 'Calendar', icon: 'calendar' },
+      { href: '/pages/household.html', label: 'Household', icon: 'users' },
+    ],
+  },
+  {
+    title: 'Family',
+    items: [
+      { href: '/pages/family.html', label: 'Family', icon: 'user-group' },
+    ],
+  },
+  {
+    title: 'Home',
+    items: [
+      { href: '/pages/home.html', label: 'Home', icon: 'house' },
+      { href: '/pages/rooms.html', label: 'Rooms', icon: 'door' },
+      { href: '/pages/cleaning.html', label: 'Cleaning', icon: 'broom' },
+      { href: '/pages/laundry.html', label: 'Laundry', icon: 'shirt' },
+      { href: '/pages/maintenance.html', label: 'Maintenance', icon: 'wrench' },
+      { href: '/pages/documents.html', label: 'Documents', icon: 'file-stack' },
+    ],
+  },
+  {
+    title: 'Kitchen',
+    items: [
+      { href: '/pages/recipes.html', label: 'Recipes', icon: 'book' },
+      { href: '/pages/meals.html', label: 'Meals', icon: 'utensils' },
+      { href: '/pages/shopping.html', label: 'Shopping', icon: 'cart' },
+      { href: '/pages/inventory.html', label: 'Inventory', icon: 'package' },
+    ],
+  },
+  {
+    title: 'Money',
+    items: [
+      { href: '/pages/finance.html', label: 'Finance', icon: 'wallet' },
+      { href: '/pages/budgets.html', label: 'Budgets', icon: 'target' },
+      { href: '/pages/bills.html', label: 'Bills', icon: 'calendar' },
+      { href: '/pages/accounts.html', label: 'Accounts', icon: 'credit-card' },
+    ],
+  },
+  {
+    title: 'Personal',
+    items: [
+      { href: '/pages/notes.html', label: 'Notes', icon: 'sticky-note' },
+      { href: '/pages/ideas.html', label: 'Ideas', icon: 'lightbulb' },
+    ],
+  },
+  {
+    title: 'Settings',
+    items: [
+      { href: '/pages/appearance.html', label: 'Appearance', icon: 'palette' },
+      { href: '/pages/profile.html', label: 'Profile', icon: 'user' },
+    ],
+  },
 ];
 
-const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter((item) => item.href !== '/');
+// Phones get the seven primary destinations; everything stays reachable
+// through the sidebar and the account menu.
+const BOTTOM_NAV_ITEMS = NAV_SECTIONS.flatMap((section) => section.items).filter((item) =>
+  [
+    '/pages/dashboard.html',
+    '/pages/diary.html',
+    '/pages/meals.html',
+    '/pages/shopping.html',
+    '/pages/tasks.html',
+    '/pages/family.html',
+    '/pages/notes.html',
+  ].includes(item.href),
+);
 
 const MODE_ICONS = { SYSTEM: 'monitor', LIGHT: 'sun', DARK: 'moon' };
 const MODE_LABELS = {
@@ -92,8 +159,11 @@ function renderChrome() {
   if (sidebar) {
     sidebar.innerHTML = `
       <div class="app-nav">
-        <p class="app-nav__section">Your home</p>
-        ${NAV_ITEMS.map(navLink).join('')}
+        ${NAV_SECTIONS.map(
+          (section) => `
+          <p class="app-nav__section">${section.title}</p>
+          ${section.items.map(navLink).join('')}`,
+        ).join('')}
       </div>`;
   }
 

@@ -89,7 +89,7 @@ Validation (in `validators/themeValidators.js`):
 - **App shell** (`layout.css` + `js/shell.js`): sticky topbar (brand, page title, sidebar/theme/account controls), sidebar rail, main content, floating bottom nav. Pages provide `[data-shell="topbar|sidebar|bottomnav"]` placeholders and call `initShell()`; the shell wires the color-mode toggle (SYSTEM → LIGHT → DARK), sidebar collapse (local-only), account dropdown and current-page marking (`aria-current`).
 - **Bottom navigation** appears automatically at ≤ 1024 px or when `data-nav-style='bottom'`.
 - **Auth pages** use the split `.auth-shell` (decorative aside + card), **the landing page** uses `.landing`.
-- **Pages:** landing (`/`), login, register, forgot/reset password, profile, household, **appearance** (preset grid, color-mode/density/navigation segmented controls, per-color override pickers, radius sliders, reset with confirmation) and **dashboard-preview** (mock sample data only — stat tiles, CSS bar chart, task list, progress, timeline, loading → empty states; no business logic).
+- **Pages:** landing (`/`), login, register, forgot/reset password, profile, household, **appearance** (preset grid, color-mode/density/navigation segmented controls, per-color override pickers, radius sliders, reset with confirmation), **dashboard** (real `/api/dashboard` data: greeting, stat tiles, diary summary, household facts, coming-soon module grid) and **diary** (timeline with date/slot groups, entry detail with private photo attachments, create/edit form).
 
 ## Reusable components (`src/client/css/components.css` + `js/components/`)
 
