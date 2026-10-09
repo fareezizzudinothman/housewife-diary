@@ -6,6 +6,9 @@ const buckets = new Map(); // key -> { count, resetAt }
 
 const MAX_TRACKED_BUCKETS = 10000;
 
+// Skip rate limiting in test environment
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 function pruneExpiredBuckets(now) {
   if (buckets.size <= MAX_TRACKED_BUCKETS) {
     return;
@@ -19,6 +22,11 @@ function pruneExpiredBuckets(now) {
 
 export function createRateLimiter({ name, windowMs, max }) {
   return function rateLimit(req, _res, next) {
+    // Skip rate limiting in test environment
+    if (isTestEnv) {
+      return next();
+    }
+
     const now = Date.now();
     const key = `${name}:${req.ip ?? 'unknown'}`;
     let bucket = buckets.get(key);

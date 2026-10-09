@@ -25,21 +25,21 @@ const MESSAGE_SELECT = {
 };
 
 export async function createConversation({ householdId, userId, title }) {
-  return prisma.aiConversation.create({
+  return prisma.aIConversation.create({
     data: { householdId, userId, title },
     select: CONVERSATION_SELECT,
   });
 }
 
 export async function findConversationById(id, householdId) {
-  return prisma.aiConversation.findFirst({
+  return prisma.aIConversation.findFirst({
     where: { id, householdId },
     select: CONVERSATION_SELECT,
   });
 }
 
 export async function findConversationWithMessages(id, householdId, messageLimit = 50) {
-  return prisma.aiConversation.findFirst({
+  return prisma.aIConversation.findFirst({
     where: { id, householdId },
     select: {
       ...CONVERSATION_SELECT,
@@ -55,14 +55,14 @@ export async function findConversationWithMessages(id, householdId, messageLimit
 export async function listConversations({ householdId, userId, page = 1, limit = 20 }) {
   const where = { householdId, userId };
   const [items, total] = await Promise.all([
-    prisma.aiConversation.findMany({
+    prisma.aIConversation.findMany({
       where,
       select: CONVERSATION_SELECT,
       orderBy: { updatedAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.aiConversation.count({ where }),
+    prisma.aIConversation.count({ where }),
   ]);
 
   return {
@@ -75,7 +75,7 @@ export async function listConversations({ householdId, userId, page = 1, limit =
 }
 
 export async function updateConversationTimestamp(id) {
-  return prisma.aiConversation.update({
+  return prisma.aIConversation.update({
     where: { id },
     data: { updatedAt: new Date() },
     select: CONVERSATION_SELECT,
@@ -83,7 +83,7 @@ export async function updateConversationTimestamp(id) {
 }
 
 export async function updateConversationTitle(id, householdId, title) {
-  return prisma.aiConversation.update({
+  return prisma.aIConversation.update({
     where: { id },
     data: { title, updatedAt: new Date() },
     select: CONVERSATION_SELECT,
@@ -91,11 +91,11 @@ export async function updateConversationTitle(id, householdId, title) {
 }
 
 export async function deleteConversation(id, householdId) {
-  return prisma.aiConversation.deleteMany({ where: { id, householdId } });
+  return prisma.aIConversation.deleteMany({ where: { id, householdId } });
 }
 
 export async function createMessage({ conversationId, role, content, metadata = {} }) {
-  return prisma.aiMessage.create({
+  return prisma.aIMessage.create({
     data: { conversationId, role, content, metadata },
     select: MESSAGE_SELECT,
   });
@@ -106,7 +106,7 @@ export async function findMessagesByConversation(conversationId, { limit = 50, b
   if (before) {
     where.createdAt = { lt: new Date(before) };
   }
-  return prisma.aiMessage.findMany({
+  return prisma.aIMessage.findMany({
     where,
     select: MESSAGE_SELECT,
     orderBy: { createdAt: 'desc' },
@@ -115,9 +115,9 @@ export async function findMessagesByConversation(conversationId, { limit = 50, b
 }
 
 export async function countMessagesByConversation(conversationId) {
-  return prisma.aiMessage.count({ where: { conversationId } });
+  return prisma.aIMessage.count({ where: { conversationId } });
 }
 
 export async function deleteMessagesByConversation(conversationId) {
-  return prisma.aiMessage.deleteMany({ where: { conversationId } });
+  return prisma.aIMessage.deleteMany({ where: { conversationId } });
 }
