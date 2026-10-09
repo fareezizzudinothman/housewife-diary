@@ -20,6 +20,7 @@ import notesRoutes from './notes.routes.js';
 import ideasRoutes from './ideas.routes.js';
 import notificationsRoutes from './notifications.routes.js';
 import exportRoutes from './export.routes.js';
+import aiRoutes from './ai.routes.js';
 
 const router = Router();
 
@@ -44,5 +45,6 @@ router.use('/notes', notesRoutes);
 router.use('/ideas', ideasRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/export', exportRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;

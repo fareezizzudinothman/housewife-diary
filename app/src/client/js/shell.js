@@ -19,6 +19,7 @@ const NAV_SECTIONS = [
       { href: '/pages/calendar.html', label: 'Calendar', icon: 'calendar' },
       { href: '/pages/household.html', label: 'Household', icon: 'users' },
       { href: '/pages/notifications.html', label: 'Notifications', icon: 'info' },
+      { href: '/pages/ai.html', label: 'AI Assistant', icon: 'bot' },
     ],
   },
   {
@@ -84,6 +85,7 @@ const BOTTOM_NAV_ITEMS = NAV_SECTIONS.flatMap((section) => section.items).filter
     '/pages/tasks.html',
     '/pages/family.html',
     '/pages/notes.html',
+    '/pages/ai.html',
   ].includes(item.href),
 );
 

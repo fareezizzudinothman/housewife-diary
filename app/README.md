@@ -2,14 +2,14 @@
 
 A warm, modern household management web application — a personal digital household companion for diary, tasks, meals, shopping, inventory, finances, family and home.
 
-> **Status:** Phase 0–9 (architecture + foundation + authentication/household management + UI foundation/theme engine + dashboard/diary + tasks/calendar + meals/recipes/shopping/inventory + finance + family/home/documents/notes/ideas + notifications/PWA/backup/export) complete.
-> The API server, PostgreSQL and Prisma are connected and verified; users can register, sign in, manage households, customize the app's appearance (nine themes, light/dark/system modes), read their dashboard, write diary entries with photos, plan tasks and calendar events, keep recipes with structured ingredients, plan meals, run shopping lists (including recipe/meal-plan import) and track pantry inventory with a full stock ledger, manage money: accounts and categories, an income/expense/transfer ledger with exact Decimal arithmetic, budgets, bills with atomic payment, recurring transactions, private receipts, monthly reports and a finance-aware dashboard — and now manage family members and events, home rooms/cleaning/laundry/maintenance, secure documents, personal notes and ideas. Remaining modules arrive phase by phase — see [docs/implementation-plan.md](docs/implementation-plan.md).
+> **Status:** Phase 0–10 (architecture + foundation + authentication/household management + UI foundation/theme engine + dashboard/diary + tasks/calendar + meals/recipes/shopping/inventory + finance + family/home/documents/notes/ideas + notifications/PWA/backup/export + **AI assistant**) complete.
+> The API server, PostgreSQL and Prisma are connected and verified; users can register, sign in, manage households, customize the app's appearance (nine themes, light/dark/system modes), read their dashboard, write diary entries with photos, plan tasks and calendar events, keep recipes with structured ingredients, plan meals, run shopping lists (including recipe/meal-plan import) and track pantry inventory with a full stock ledger, manage money: accounts and categories, an income/expense/transfer ledger with exact Decimal arithmetic, budgets, bills with atomic payment, recurring transactions, private receipts, monthly reports and a finance-aware dashboard — and now manage family members and events, home rooms/cleaning/laundry/maintenance, secure documents, personal notes and ideas, and chat with an AI household assistant that can read and write household data through a safe, confirmed tool layer.
 
 ## Modules
 
-**Delivered:** authentication and household management, appearance/themes, dashboard (real aggregation — no mock data), diary (timeline, search and filters, moods, tags, photo attachments), tasks (categories, assignment, views, recurring tasks), calendar (all-day/timed events, ranged month view, task-, meal-, bill-, family- and maintenance-derived items), the kitchen flow — recipes with structured ingredients, weekly meal planner (with calendar integration), shopping lists (recipe scaling, meal-plan import, purchase tracking, shopping → inventory) and household inventory (transaction ledger, derived stock/expiry status, low-stock alerts) — and finance (accounts, categories, income/expense/transfer ledger, monthly budgets, bills with atomic payment, recurring transactions, receipts, monthly reports, dashboard summary). **Family & Home:** family members and events (birthdays → Calendar), home rooms/cleaning/laundry/maintenance (Maintenance → Calendar + Task), secure documents (private upload, expiry, cross-references), personal notes (tags, pin, archive, search), ideas (priority, cost, optional Task link). **Platform:** notifications (in-app center, unread badge), PWA (installable, offline shell, safe caching), backup/export (JSON/CSV, granular module selection, secure download).
+**Delivered:** authentication and household management, appearance/themes, dashboard (real aggregation — no mock data), diary (timeline, search and filters, moods, tags, photo attachments), tasks (categories, assignment, views, recurring tasks), calendar (all-day/timed events, ranged month view, task-, meal-, bill-, family- and maintenance-derived items), the kitchen flow — recipes with structured ingredients, weekly meal planner (with calendar integration), shopping lists (recipe scaling, meal-plan import, purchase tracking, shopping → inventory) and household inventory (transaction ledger, derived stock/expiry status, low-stock alerts) — and finance (accounts, categories, income/expense/transfer ledger, monthly budgets, bills with atomic payment, recurring transactions, receipts, monthly reports, dashboard summary). **Family & Home:** family members and events (birthdays → Calendar), home rooms/cleaning/laundry/maintenance (Maintenance → Calendar + Task), secure documents (private upload, expiry, cross-references), personal notes (tags, pin, archive, search), ideas (priority, cost, optional Task link). **Platform:** notifications (in-app center, unread badge), PWA (installable, offline shell, safe caching), backup/export (JSON/CSV, granular module selection, secure download). **Assistant:** AI household assistant (tool-based, household-scoped, confirmed writes).
 
-**Planned (phase by phase):**
+**Planned (future phases):**
 
 | Area | Modules |
 | --- | --- |
@@ -19,7 +19,7 @@ A warm, modern household management web application — a personal digital house
 | People | Family members, family events, household roles |
 | Home | Home inventory, appliances, warranties |
 | Platform | Authentication, dashboard, notifications, themes, PWA, backup/export |
-| Assistant | AI household assistant (tool-based, household-scoped) |
+| Assistant | Multi-turn autonomous agents, streaming, image analysis, voice, web search |
 
 ## Technology stack
 
@@ -225,7 +225,7 @@ docker compose down
 | 7 | Finance, bills, budgets, reports | Complete |
 | 8 | Family, home management, documents, notes, ideas | Complete |
 | 9 | Notifications, PWA, backup/export | Complete |
-| 10 | AI assistant and household automation | Planned |
+| 10 | AI assistant and household automation | **Complete** |
 
 ## Security notes
 

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AI Assistant in Housewife Diary.">
+  <title>AI Assistant — Housewife Diary</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#c96e6e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Housewife Diary">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+  <script src="/js/theme/boot.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body data-page-title="AI Assistant">
+  <div class="app-shell">
+    <header class="app-topbar" data-shell="topbar"></header>
+    <nav class="app-sidebar" data-shell="sidebar" aria-label="Main"></nav>
+
+    <main class="app-main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div class="page-head__text">
+            <p class="eyebrow">Assistant</p>
+            <h1>AI Assistant</h1>
+            <p>Ask questions, manage your household, get things done.</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn--primary" data-new-conversation>New Chat</button>
+          </div>
+        </div>
+
+        <div class="ai-assistant" data-ai-assistant>
+          <div class="ai-assistant__sidebar" data-conversation-list aria-label="Conversations">
+            <div class="conversation-list-header">
+              <h2 class="conversation-list-title">Conversations</h2>
+            </div>
+            <div class="conversation-list" data-conversations role="list" aria-label="Conversation history"></div>
+            <div class="conversation-list-empty" data-empty-state hidden>
+              <p>No conversations yet.</p>
+              <button type="button" class="btn btn--primary btn--small" data-new-conversation-empty>Start a new chat</button>
+            </div>
+          </div>
+
+          <div class="ai-assistant__chat" data-chat-area>
+            <div class="chat-header" data-chat-header hidden>
+              <h2 class="chat-title" data-chat-title></h2>
+              <div class="chat-actions">
+                <button type="button" class="icon-btn" data-rename-chat aria-label="Rename conversation">
+                  <svg class="icon"><use href="/icons/sprite.svg#i-pencil"></use></svg>
+                </button>
+                <button type="button" class="icon-btn icon-btn--danger" data-delete-chat aria-label="Delete conversation">
+                  <svg class="icon"><use href="/icons/sprite.svg#i-trash"></use></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="chat-welcome" data-welcome hidden>
+              <svg class="chat-welcome__icon" aria-hidden="true"><use href="/icons/sprite.svg#i-bot"></use></svg>
+              <h2>How can I help?</h2>
+              <p>Start a new conversation to ask questions, create tasks, plan meals, manage inventory, and more.</p>
+              <div class="chat-welcome__suggestions" data-suggestions></div>
+            </div>
+
+            <div class="chat-messages" data-messages role="log" aria-live="polite" aria-label="Conversation"></div>
+
+            <div class="chat-input-area" data-input-area hidden>
+              <div class="chat-status" data-chat-status role="status" aria-live="polite"></div>
+              <form class="chat-form" data-chat-form novalidate>
+                <div class="chat-form__input-wrapper">
+                  <textarea
+                    class="chat-form__input"
+                    name="message"
+                    placeholder="Type a message…"
+                    rows="1"
+                    data-message-input
+                    aria-label="Message"
+                  ></textarea>
+                </div>
+                <div class="chat-form__actions">
+                  <button type="submit" class="btn btn--primary" data-send-btn disabled>
+                    <svg class="icon" aria-hidden="true"><use href="/icons/sprite.svg#i-send"></use></svg>
+                    <span>Send</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div class="chat-loading" data-loading hidden aria-live="polite">
+              <div class="spinner"></div>
+              <p>Thinking…</p>
+            </div>
+
+            <div class="chat-error" data-error hidden role="alert">
+              <svg class="icon" aria-hidden="true"><use href="/icons/sprite.svg#i-alert"></use></svg>
+              <p data-error-message></p>
+              <button type="button" class="btn btn--secondary btn--small" data-retry>Retry</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div class="modal modal--confirmation" data-confirmation-modal hidden role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+          <div class="modal__backdrop" data-confirm-backdrop></div>
+          <div class="modal__content modal__content--confirmation">
+            <header class="modal__header">
+              <h2 id="confirm-title">Confirm Action</h2>
+            </header>
+            <div class="modal__body">
+              <p data-confirm-message></p>
+              <div class="confirmation-details" data-confirm-details hidden></div>
+            </div>
+            <footer class="modal__footer">
+              <button type="button" class="btn btn--secondary" data-confirm-cancel>Cancel</button>
+              <button type="button" class="btn btn--primary" data-confirm-ok>Confirm</button>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <nav class="app-bottomnav" data-shell="bottomnav" aria-label="Main"></nav>
+  </div>
+  <script type="module" src="/js/pages/ai.js"></script>
+</body>
+</html>

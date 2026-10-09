@@ -16,7 +16,7 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 | 7 | Finance, expenses, bills, budgets, reports | **Complete** |
 | 8 | Family, home management, documents, notes, ideas | **Complete** |
 | 9 | Notifications, PWA, backup/export | **Complete** |
-| 10 | AI assistant and household automation | Planned |
+| 10 | AI assistant and household automation | **Complete** |
 
 ## Phase 0–1 (delivered in this repository state)
 
@@ -236,9 +236,34 @@ Housewife Diary is built phase by phase. Each phase has explicit scope and compl
 - Browser-verified: notifications page loads, unread badge updates, export page generates JSON/CSV downloads, PWA manifest loads, service worker registers, dashboard shows notifications section.
 - Phase 6–8 E2E regression: all previous flows still passing.
 
+## Phase 10 — AI Assistant (delivered)
+
+**Scope:**
+
+- **Provider abstraction** (`providers.js`, `openaiProvider.js`): `AIProvider` base class with `generateResponse`, `generateStructuredResponse`, `isAvailable`, `getName`; `OpenAIProvider` using OpenAI Node SDK with tool calling support, JSON mode, configurable model/timeout.
+- **Tool layer** (`tools/`): `AITool` base class with validation, confirmation flow, result formatting. 13 read tools (`getDashboard`, `getTasks`, `getTaskCategories`, `getCalendar`, `getMeals`, `getShopping`, `getInventory`, `getFinanceSummary`, `getFamily`, `getHome`, `getDocuments`, `getNotes`, `getIdeas`, `getNotifications`, `getUnreadNotificationCount`) and 11 write tools (`createTask`, `updateTask`, `completeTask`, `createCalendarEvent`, `createMeal`, `createShoppingItem`, `updateInventory`, `createNote`, `createIdea`, `createFamilyEvent`, `createMaintenanceItem`). All write tools require explicit user confirmation.
+- **Orchestrator** (`orchestrator.js`): Conversation loading, message persistence, context building, provider invocation with tool calling, tool execution with confirmation handling, max 5 iterations, 60s timeout, error handling.
+- **Service layer** (`aiService.js`): Conversation CRUD, message sending, confirmation handling. `aiRepository.js` for data access.
+- **API routes** (`ai.routes.js`): `GET/POST /api/ai/conversations`, `GET/PATCH/DELETE /api/ai/conversations/:id`, `POST /api/ai/conversations/:id/messages`, `POST /api/ai/conversations/:id/confirm`, `GET /api/ai/status`. Auth + household middleware, CSRF, rate limiting (30 req/min messages, 60 req/min writes).
+- **Frontend** (`pages/ai.html`, `js/pages/ai.js`, `js/api/ai.js`): Conversation list sidebar, chat interface with message history, loading/error states, confirmation modal, suggestion chips, auto-resize textarea, Enter-to-send, theme integration, responsive (collapsible sidebar on mobile). Added to "Your Home" nav section and bottom nav.
+- **Persistence**: `ai_conversations` + `ai_messages` tables (migration `20261008101244_add_ai_conversations`).
+- **Icons**: Added `i-bot` to SVG sprite.
+
+**Out of scope (intentionally deferred):** Multi-turn autonomous agent loops beyond max iterations, streaming responses, image/document analysis, voice input, custom model fine-tuning, web search, code execution.
+
+**Design:** [ai-architecture.md](ai-architecture.md), [ai-assistant.md](ai-assistant.md), [architecture.md](architecture.md), [database-design.md](database-design.md), [api-design.md](api-design.md).
+
+### Completion criteria (met)
+
+- `npm test` passes (279 tests) — all existing tests pass, no regressions.
+- Migration `20261008101244_add_ai_conversations` applied; `prisma migrate status` reports an up-to-date schema.
+- `docker compose up -d --build` healthy; `/api/health` returns `success: true`; smoke tests pass for AI conversation CRUD, message sending, confirmation flow, provider status check.
+- Browser-verified: AI Assistant page loads, conversation list works, new chat creates conversation, messages send/receive, read tools return data, write tools show confirmation, confirmation modal executes on confirm, provider unavailable state handled, responsive layouts (375–1360 px).
+- Phase 6–9 E2E regression: all previous flows still passing.
+
 ## Later phases (summary scope)
 
-- **Phase 10:** AI assistant over the tool layer.
+- **Phase 11+:** Multi-turn autonomous agent loops, streaming responses, image/document analysis, voice input, web search, code execution, custom model fine-tuning.
 
 ## Risks and ordering rationale
 

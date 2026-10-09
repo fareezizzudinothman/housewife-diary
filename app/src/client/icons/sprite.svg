@@ -237,4 +237,10 @@
     <path d="M3.5 3.5h17v17H3.5Z" />
     <path d="M15.5 3.5v17" />
   </symbol>
+  <symbol id="i-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="4" y="4" width="16" height="16" rx="2" />
+    <path d="M8 8h.01M16 8h.01" />
+    <path d="M8 16h8" />
+    <path d="M12 4v2M12 18v2M4 12h2M18 12h2" />
+  </symbol>
 </svg>
